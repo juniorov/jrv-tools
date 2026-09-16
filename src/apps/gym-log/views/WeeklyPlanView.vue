@@ -4,7 +4,8 @@ import { useRouter } from 'vue-router'
 import { getWeekOverrides, getWeeklyPlan, clearWeekOverride, setTemplateDay, setWeekOverride } from '../services/planSemanal'
 import { getActiveSession, startSession } from '../services/sesiones'
 import { getRoutines } from '../services/rutinas'
-import { benchedRoutines, effectiveWeeklyPlan, mondayFirstIndex } from '../utils/weeklyPlan'
+import { DAY_LABELS, benchedRoutines, effectiveWeeklyPlan, mondayFirstIndex } from '../utils/weeklyPlan'
+import { suggestWeeklyPlan } from '../utils/weeklySuggestion'
 
 const router = useRouter()
 
@@ -14,6 +15,8 @@ const overrides = ref({})
 const loading = ref(true)
 const error = ref('')
 const starting = ref(false)
+const suggestion = ref(null)
+const applyingSuggestion = ref(false)
 
 const todayIndex = mondayFirstIndex()
 const plan = computed(() => effectiveWeeklyPlan(template.value, overrides.value))
@@ -87,6 +90,38 @@ async function assignFromBench(routine, event) {
   }
 }
 
+function handleSuggest() {
+  const fixed = {}
+  for (const [dayIndex, routineId] of Object.entries(template.value)) {
+    const routine = routines.value.find((r) => r.id === routineId)
+    if (routine?.category === 'Natación') fixed[dayIndex] = routineId
+  }
+  suggestion.value = suggestWeeklyPlan(routines.value, { fixed })
+}
+
+function suggestionNoteFor(dayIndex) {
+  return suggestion.value?.notes.find((n) => n.dayIndex === dayIndex && n.level === 'warning')
+}
+
+function discardSuggestion() {
+  suggestion.value = null
+}
+
+async function applySuggestion() {
+  applyingSuggestion.value = true
+  try {
+    for (const [dayIndex, routineId] of Object.entries(suggestion.value.assignments)) {
+      await setTemplateDay(Number(dayIndex), routineId)
+    }
+    template.value = await getWeeklyPlan()
+    suggestion.value = null
+  } catch (err) {
+    error.value = err.message
+  } finally {
+    applyingSuggestion.value = false
+  }
+}
+
 async function handleStartToday() {
   const todayRow = plan.value[todayIndex]
   const routine = routines.value.find((r) => r.id === todayRow.routineId)
@@ -113,12 +148,40 @@ onMounted(load)
 
 <template>
   <div class="weekly-plan-view">
-    <h1 class="h4 mb-3">Plan semanal</h1>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="h4 mb-0">Plan semanal</h1>
+      <button type="button" class="btn btn-outline-primary btn-sm" @click="handleSuggest">
+        <i class="bi bi-magic me-1"></i>Sugerir orden semanal
+      </button>
+    </div>
 
     <div v-if="error" class="alert alert-danger">{{ error }}</div>
     <div v-if="loading" class="text-muted">Cargando...</div>
 
     <template v-else>
+      <div v-if="suggestion" class="suggestion-panel mb-3">
+        <h2 class="h6 mb-2">Propuesta de orden semanal</h2>
+        <ul class="list-unstyled mb-2">
+          <li v-for="row in DAY_LABELS" :key="row" class="suggestion-row">
+            <span class="fw-semibold">{{ row }}:</span>
+            {{ routineName(suggestion.assignments[DAY_LABELS.indexOf(row)]) }}
+            <span v-if="suggestionNoteFor(DAY_LABELS.indexOf(row))" class="text-warning small ms-1">
+              <i class="bi bi-exclamation-triangle"></i>
+              {{ suggestionNoteFor(DAY_LABELS.indexOf(row)).message }}
+            </span>
+          </li>
+        </ul>
+        <p v-for="note in suggestion.notes.filter((n) => n.dayIndex === null)" :key="note.message" class="text-muted small mb-1">
+          <i class="bi bi-info-circle me-1"></i>{{ note.message }}
+        </p>
+        <div class="mt-2">
+          <button type="button" class="btn btn-primary btn-sm me-2" :disabled="applyingSuggestion" @click="applySuggestion">
+            {{ applyingSuggestion ? 'Aplicando...' : 'Aplicar a la plantilla' }}
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" @click="discardSuggestion">Descartar</button>
+        </div>
+      </div>
+
       <div v-for="row in plan" :key="row.dayIndex" class="day-row" :class="{ 'day-row-today': row.dayIndex === todayIndex }">
         <div class="day-header">
           <span class="day-label">{{ row.label }}</span>
@@ -184,6 +247,17 @@ onMounted(load)
 </template>
 
 <style scoped>
+.suggestion-panel {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+  padding: 0.75rem 1rem;
+}
+
+.suggestion-row {
+  padding: 0.15rem 0;
+}
+
 .day-row {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);

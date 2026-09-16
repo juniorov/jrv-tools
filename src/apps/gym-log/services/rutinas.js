@@ -33,7 +33,7 @@ export async function getRoutine(routineId) {
   return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null
 }
 
-export async function createRoutine({ name, description = '', exercises }) {
+export async function createRoutine({ name, description = '', exercises, category }) {
   const uid = currentUid()
   const docRef = doc(routinesRef)
   await setDoc(docRef, {
@@ -41,6 +41,7 @@ export async function createRoutine({ name, description = '', exercises }) {
     name,
     description,
     exercises,
+    category: category || 'Otro',
     createdAt: serverTimestamp(),
   })
   return docRef.id
@@ -55,8 +56,8 @@ export async function importRoutines(routines) {
   return ids
 }
 
-export async function updateRoutine(routineId, { name, description, exercises }) {
-  await updateDoc(doc(db, 'gym_log_routines', routineId), { name, description, exercises })
+export async function updateRoutine(routineId, { name, description, exercises, category }) {
+  await updateDoc(doc(db, 'gym_log_routines', routineId), { name, description, exercises, category: category || 'Otro' })
 }
 
 export async function deleteRoutine(routineId) {

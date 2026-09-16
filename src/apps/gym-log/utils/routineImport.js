@@ -1,11 +1,16 @@
 // Parseo/validación de rutinas importadas desde un archivo JSON. Formato esperado:
 //
 // { "routines": [
-//     { "name": "Push Day A", "description": "...", "exercises": [
+//     { "name": "Push Day A", "description": "...", "category": "Empuje", "exercises": [
 //         { "name": "Press banca", "muscleGroup": "Pecho", "targetSets": 4, "targetReps": "8-10", "restSeconds": 90 },
 //         { "name": "Plancha", "metric": "time", "targetSets": 3, "targetSeconds": 40, "restSeconds": 60 }
 //       ] }
 //   ] }
+//
+// `category` es opcional (default "Otro"). Valores válidos: "Piernas", "Empuje", "Tirón",
+// "Full Body", "Cardio", "Natación", "Descanso activo", "Otro" — se usa en Plan semanal para
+// recomendar cómo distribuir los días de entrenamiento sin repetir grupos musculares pesados
+// seguidos.
 //
 // `metric` es opcional (default "reps"). Con `metric: "time"` el ejercicio se mide en segundos
 // de trabajo por serie (ej. planchas, calentamientos) en vez de repeticiones — se usa
@@ -18,6 +23,8 @@
 // { "name": "Zancadas", "supersetGroup": "A" }.
 //
 // También se acepta una sola rutina como objeto raíz (sin el wrapper "routines").
+
+import { normalizeCategory } from './routineCategories'
 
 function normalizeExercise(raw, routineName, index) {
   if (!raw || typeof raw.name !== 'string' || !raw.name.trim()) {
@@ -47,6 +54,7 @@ function normalizeRoutine(raw, index) {
   return {
     name: raw.name.trim(),
     description: raw.description ?? '',
+    category: normalizeCategory(raw.category),
     exercises: raw.exercises.map((ex, i) => normalizeExercise(ex, raw.name, i)),
   }
 }

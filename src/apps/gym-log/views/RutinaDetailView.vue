@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getRoutine, updateRoutine } from '../services/rutinas'
+import { ROUTINE_CATEGORIES, normalizeCategory } from '../utils/routineCategories'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,6 +17,7 @@ async function load() {
   try {
     routine.value = await getRoutine(route.params.id)
     if (!routine.value) error.value = 'La rutina no existe'
+    else routine.value.category = normalizeCategory(routine.value.category)
   } catch (err) {
     error.value = err.message
   } finally {
@@ -65,6 +67,7 @@ async function save() {
       name: routine.value.name,
       description: routine.value.description,
       exercises: routine.value.exercises,
+      category: routine.value.category,
     })
     router.push({ name: 'gym-log-rutinas' })
   } catch (err) {
@@ -91,6 +94,13 @@ onMounted(load)
       <div class="mb-3">
         <label class="form-label">Descripción</label>
         <textarea v-model="routine.description" class="form-control" rows="2"></textarea>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Categoría</label>
+        <select v-model="routine.category" class="form-select">
+          <option v-for="c in ROUTINE_CATEGORIES" :key="c" :value="c">{{ c }}</option>
+        </select>
       </div>
 
       <h2 class="h6 mt-4 mb-2">Ejercicios</h2>

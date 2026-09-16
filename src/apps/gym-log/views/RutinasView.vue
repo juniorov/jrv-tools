@@ -84,6 +84,8 @@ onMounted(load)
       <code>"metric": "time", "targetSeconds": 40</code> en vez de <code>"targetReps"</code>.
       Para armar un superset, agrega <code>"supersetGroup": "A"</code> (el mismo valor) a los
       ejercicios consecutivos que deben hacerse intercalados sin descanso.
+      Agrega <code>"category"</code> a la rutina (Piernas, Empuje, Tirón, Full Body, Cardio,
+      Natación, Descanso activo u Otro) para que "Sugerir orden semanal" la tenga en cuenta.
     </p>
 
     <div v-if="importError" class="alert alert-danger">{{ importError }}</div>
