@@ -27,7 +27,21 @@ useAuthStore().init()
 
 app.mount('#app')
 
+// El navegador solo revisa si hay un Service Worker nuevo cuando ocurre una navegación de red;
+// en un PWA instalada (ícono de pantalla de inicio) reabrir la app suele ser solo "reanudar desde
+// background", sin esa navegación — así que sin este chequeo periódico las actualizaciones pueden
+// tardar mucho en detectarse (patrón recomendado por vite-plugin-pwa).
+const UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000
+
 const updateSW = registerSW({
+  onRegisteredSW(swUrl, registration) {
+    if (!registration) return
+    setInterval(async () => {
+      if (registration.installing || !navigator.onLine) return
+      const resp = await fetch(swUrl, { cache: 'no-store', headers: { 'cache-control': 'no-cache' } })
+      if (resp.status === 200) await registration.update()
+    }, UPDATE_CHECK_INTERVAL_MS)
+  },
   onNeedRefresh() {
     if (confirm('Hay una nueva versión de JRV Tools disponible. ¿Actualizar ahora?')) {
       updateSW(true)

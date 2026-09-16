@@ -280,7 +280,19 @@ onUnmounted(() => {
       <div v-for="group in groupedExercises" :key="group.exerciseName" class="exercise-card mb-3">
         <div v-if="group.supersetLabel" class="superset-badge">{{ group.supersetLabel }}</div>
         <div class="d-flex justify-content-between align-items-center mb-2">
-          <h2 class="h6 mb-0">{{ group.exerciseName }}</h2>
+          <h2 class="h6 mb-0">
+            {{ group.exerciseName }}
+            <a
+              v-if="group.videoUrl"
+              :href="group.videoUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="video-link"
+              title="Ver guía en video"
+            >
+              <i class="bi bi-play-circle-fill"></i>
+            </a>
+          </h2>
           <div class="unit-toggle" role="group" aria-label="Unidad de peso">
             <button
               type="button"
@@ -479,6 +491,11 @@ onUnmounted(() => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: 1rem;
+}
+
+.video-link {
+  color: var(--color-primary);
+  margin-left: 0.35rem;
 }
 
 .superset-badge {

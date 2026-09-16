@@ -2,10 +2,14 @@
 //
 // { "routines": [
 //     { "name": "Push Day A", "description": "...", "category": "Empuje", "exercises": [
-//         { "name": "Press banca", "muscleGroup": "Pecho", "targetSets": 4, "targetReps": "8-10", "restSeconds": 90 },
+//         { "name": "Press banca", "muscleGroup": "Pecho", "targetSets": 4, "targetReps": "8-10", "restSeconds": 90,
+//           "videoUrl": "https://youtube.com/watch?v=..." },
 //         { "name": "Plancha", "metric": "time", "targetSets": 3, "targetSeconds": 40, "restSeconds": 60 }
 //       ] }
 //   ] }
+//
+// `videoUrl` es opcional: un link a un video que sirva de guía para ejecutar el ejercicio
+// (aparece como botón "Ver guía" al armar la rutina y durante el entrenamiento activo).
 //
 // `category` es opcional (default "Otro"). Valores válidos: "Piernas", "Empuje", "Tirón",
 // "Full Body", "Cardio", "Natación", "Descanso activo", "Otro" — se usa en Plan semanal para
@@ -41,6 +45,7 @@ function normalizeExercise(raw, routineName, index) {
     restSeconds: Number.isFinite(raw.restSeconds) ? raw.restSeconds : null,
     supersetGroup: raw.supersetGroup != null ? String(raw.supersetGroup) : null,
     notes: raw.notes ?? '',
+    videoUrl: raw.videoUrl ?? '',
   }
 }
 

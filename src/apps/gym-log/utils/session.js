@@ -35,6 +35,7 @@ function blankStepFrom(exercise, setNumber, supersetLabel) {
     targetSeconds: exercise.targetSeconds,
     restSeconds: exercise.restSeconds,
     supersetLabel,
+    videoUrl: exercise.videoUrl || '',
     reps: null,
     weight: null,
     seconds: null,
@@ -83,6 +84,7 @@ export function groupStepsForDisplay(steps) {
         exerciseName: step.exerciseName,
         metric: step.metric,
         supersetLabel: step.supersetLabel,
+        videoUrl: step.videoUrl,
         items: [],
       })
       order.push(step.exerciseName)

@@ -86,6 +86,8 @@ onMounted(load)
       ejercicios consecutivos que deben hacerse intercalados sin descanso.
       Agrega <code>"category"</code> a la rutina (Piernas, Empuje, Tirón, Full Body, Cardio,
       Natación, Descanso activo u Otro) para que "Sugerir orden semanal" la tenga en cuenta.
+      Agrega <code>"videoUrl"</code> a un ejercicio con un link de video que sirva de guía para
+      ejecutarlo correctamente.
     </p>
 
     <div v-if="importError" class="alert alert-danger">{{ importError }}</div>

@@ -36,6 +36,7 @@ function addExercise() {
     restSeconds: null,
     supersetGroup: null,
     notes: '',
+    videoUrl: '',
   })
 }
 
@@ -163,6 +164,28 @@ onMounted(load)
               <i class="bi bi-trash"></i>
             </button>
           </div>
+          <div class="col-12">
+            <label class="form-label video-label">
+              <i class="bi bi-play-btn me-1"></i>Video guía (opcional)
+            </label>
+            <div class="d-flex gap-2">
+              <input
+                v-model="exercise.videoUrl"
+                type="url"
+                class="form-control"
+                placeholder="https://..."
+              />
+              <a
+                v-if="exercise.videoUrl"
+                :href="exercise.videoUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn btn-outline-secondary"
+              >
+                <i class="bi bi-box-arrow-up-right"></i>
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -180,6 +203,11 @@ onMounted(load)
 </template>
 
 <style scoped>
+.video-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
 .exercise-card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
