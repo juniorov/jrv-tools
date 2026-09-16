@@ -66,4 +66,13 @@ export const apps = [
     routeBase: '/gym-log',
     requiresAuth: true,
   },
+  {
+    slug: 'recetas',
+    name: 'Recetas',
+    description: 'Buscá recetas por lo que tenés en casa y escalá porciones',
+    icon: 'bi-egg-fried',
+    color: '#f59e0b',
+    routeBase: '/recetas',
+    requiresAuth: true,
+  },
 ]

@@ -9,6 +9,7 @@ import './apps/lunar-garden/style.css'
 import './apps/spray-mix/style.css'
 import './apps/ahorros/style.css'
 import './apps/gym-log/style.css'
+import './apps/recetas/style.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

@@ -16,6 +16,7 @@ saber en qué carpeta trabajar:**
 | "spray-mix", "dosificador agrícola", "calculadora de mezclas", "la bomba de fumigar" | `src/apps/spray-mix/` | `/spray-mix` (+ `/spray-mix/productos`) | — (sin Firestore) | Prefijo `spray_mix_` (`spray_mix_products_v1`) | No |
 | "ahorros", "ahorro familiar", "metas de ahorro" | `src/apps/ahorros/` | `/ahorros` | Prefijo `ahorros_` (`ahorros_entities`, `ahorros_accounts`, `ahorros_goals`) + `users_by_email` (colección compartida entre apps) | — | Sí |
 | "gym-log", "GymLog", "registro de entrenamientos", "rutinas de gimnasio", "plan semanal" | `src/apps/gym-log/` | `/gym-log` (+ `/gym-log/rutinas`, `/gym-log/rutinas/:id`, `/gym-log/entrenamientos`, `/gym-log/registrar`, `/gym-log/entrenar`, `/gym-log/plan-semanal`) | Prefijo `gym_log_` (`gym_log_routines`, `gym_log_workouts`, `gym_log_active_sessions`, `gym_log_weekly_plan`, `gym_log_week_overrides` — las últimas 3 con doc id = uid) | — | Sí |
+| "recetas", "Recetas", "recetario", "buscador de recetas por ingredientes" | `src/apps/recetas/` | `/recetas` (+ `/recetas/recetario`, `/recetas/recetario/nueva`, `/recetas/recetario/:id`, `/recetas/recetario/:id/editar`) | Prefijo `recetas_` (`recetas_recipes`) | — | Sí |
 
 ## Piezas compartidas del host
 

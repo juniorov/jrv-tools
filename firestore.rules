@@ -124,6 +124,12 @@ service cloud.firestore {
       allow read, write: if isOwner(uid);
     }
 
+    // --- recetas (prefijo recetas_) ---
+    match /recetas_recipes/{recipeId} {
+      allow read, update, delete: if isOwner(resource.data.ownerId);
+      allow create: if isOwner(request.resource.data.ownerId);
+    }
+
     // Compartida entre apps: resuelve email -> uid para invitar a objetivos de ahorros.
     match /users_by_email/{email} {
       allow read: if isSignedIn();

@@ -7,6 +7,7 @@ import lunarGardenRoutes from '@/apps/lunar-garden/routes'
 import sprayMixRoutes from '@/apps/spray-mix/routes'
 import ahorrosRoutes from '@/apps/ahorros/routes'
 import gymLogRoutes from '@/apps/gym-log/routes'
+import recetasRoutes from '@/apps/recetas/routes'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -36,6 +37,7 @@ const router = createRouter({
     sprayMixRoutes,
     ahorrosRoutes,
     gymLogRoutes,
+    recetasRoutes,
   ],
 })
 
