@@ -28,5 +28,15 @@ export default {
       name: 'ahorros-entidades',
       component: () => import('@/apps/ahorros/views/EntidadesView.vue'),
     },
+    {
+      path: 'prestamos',
+      name: 'ahorros-prestamos',
+      component: () => import('@/apps/ahorros/views/PrestamosView.vue'),
+    },
+    {
+      path: 'prestamos/:id',
+      name: 'ahorros-prestamo-detail',
+      component: () => import('@/apps/ahorros/views/PrestamoDetailView.vue'),
+    },
   ],
 }

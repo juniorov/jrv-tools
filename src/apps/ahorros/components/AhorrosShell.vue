@@ -20,6 +20,9 @@ const isObjetivosActive = computed(
 const isCuentasActive = computed(
   () => route.name === 'ahorros-cuentas' || route.name === 'ahorros-cuenta-detail',
 )
+const isPrestamosActive = computed(
+  () => route.name === 'ahorros-prestamos' || route.name === 'ahorros-prestamo-detail',
+)
 
 function closeMenu() {
   const el = document.getElementById('ahorrosNav')
@@ -99,6 +102,16 @@ async function handleLogout() {
                 Entidades
               </RouterLink>
             </li>
+            <li class="nav-item">
+              <RouterLink
+                class="nav-link"
+                to="/ahorros/prestamos"
+                :class="{ active: isPrestamosActive }"
+                @click="closeMenu"
+              >
+                Préstamos
+              </RouterLink>
+            </li>
             <li v-if="authStore.isAuthenticated" class="nav-item">
               <button class="nav-link btn btn-link" @click="handleLogout">
                 <i class="bi bi-box-arrow-right me-1"></i>Salir
@@ -126,6 +139,10 @@ async function handleLogout() {
     <RouterLink to="/ahorros/entidades" class="bottom-nav-item" active-class="active">
       <i class="bi bi-bank"></i>
       <span>Entidades</span>
+    </RouterLink>
+    <RouterLink to="/ahorros/prestamos" class="bottom-nav-item" :class="{ active: isPrestamosActive }">
+      <i class="bi bi-cash-coin"></i>
+      <span>Préstamos</span>
     </RouterLink>
   </nav>
 </template>
