@@ -65,6 +65,10 @@ const progressPct = computed(() => {
   if (!goal.value?.targetAmount) return null
   return Math.min(100, Math.round((total.value / goal.value.targetAmount) * 100))
 })
+const remainingAmount = computed(() => {
+  if (!goal.value?.targetAmount) return null
+  return Math.max(0, goal.value.targetAmount - total.value)
+})
 
 const personEntries = computed(() => {
   const targets = goal.value?.personTargets ?? {}
@@ -75,7 +79,8 @@ const personEntries = computed(() => {
       const total = subtotals.get(persona) ?? 0
       const target = targets[persona] ?? null
       const progressPct = target ? Math.min(100, Math.round((total / target) * 100)) : null
-      return { persona, total, target, progressPct }
+      const remaining = target ? Math.max(0, target - total) : null
+      return { persona, total, target, progressPct, remaining }
     })
     .sort((a, b) => a.persona.localeCompare(b.persona))
 })
@@ -296,6 +301,14 @@ onMounted(loadAll)
           <div class="progress mt-2" style="height: 0.5rem">
             <div class="progress-bar" :style="{ width: progressPct + '%' }"></div>
           </div>
+          <div class="small mt-1" :class="remainingAmount > 0 ? 'text-muted' : 'text-success fw-semibold'">
+            <template v-if="remainingAmount > 0">
+              Falta {{ formatMoney(remainingAmount, goal.currency) }} para completar la meta
+            </template>
+            <template v-else>
+              <i class="bi bi-check-circle-fill me-1"></i>Meta completa
+            </template>
+          </div>
         </template>
       </div>
     </div>
@@ -366,6 +379,12 @@ onMounted(loadAll)
                   </div>
                   <div class="progress mt-1" style="height: 0.4rem">
                     <div class="progress-bar" :style="{ width: entry.progressPct + '%' }"></div>
+                  </div>
+                  <div class="small mt-1" :class="entry.remaining > 0 ? 'text-muted' : 'text-success'">
+                    <template v-if="entry.remaining > 0">
+                      Falta {{ formatMoney(entry.remaining, goal.currency) }}
+                    </template>
+                    <template v-else>Meta completa</template>
                   </div>
                 </template>
               </div>

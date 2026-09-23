@@ -93,14 +93,15 @@ export async function addAccountMovement(
 
 /**
  * Edita un movimiento de cuenta ya registrado, recalculando el saldo de la cuenta (se revierte
- * el efecto del monto/tipo anterior y se aplica el nuevo). El objetivo al que estaba vinculado
- * (si aplica) no se puede cambiar desde aquí, solo el monto/tipo/fecha/descripción/persona; si
- * el movimiento tiene un espejo en un objetivo, se actualiza también.
+ * el efecto del monto/tipo anterior y se aplica el nuevo). El vínculo a objetivo también se
+ * puede cambiar desde aquí (vincular uno nuevo, cambiarlo por otro, o desvincularlo): si cambia,
+ * se borra el espejo viejo (si había) y se crea uno nuevo (si corresponde); si el objetivo
+ * vinculado es el mismo de antes, su espejo solo se actualiza con los datos nuevos.
  */
 export async function updateAccountMovement(
   accountId,
   movementId,
-  { type, amount, description, date, persona = null, allowOverdraft = false },
+  { type, amount, description, date, goalId = null, persona = null, allowOverdraft = false },
 ) {
   const accountRef = doc(db, 'ahorros_accounts', accountId)
   const movementRef = doc(accountRef, 'movements', movementId)
@@ -117,25 +118,51 @@ export async function updateAccountMovement(
     throw new Error('El cambio deja la cuenta en negativo. Marca "permitir descubierto" si es intencional.')
   }
 
-  const goalId = oldMovement.goalId ?? null
-  const goalMovementId = oldMovement.goalMovementId ?? null
+  const oldGoalId = oldMovement.goalId ?? null
+  const oldGoalMovementId = oldMovement.goalMovementId ?? null
 
   const batch = writeBatch(db)
   batch.update(accountRef, { balance: increment(newDelta - oldDelta) })
-  batch.update(movementRef, {
-    type,
-    amount,
-    description,
-    date,
-    persona: goalId ? persona : null,
-  })
-  if (goalId && goalMovementId) {
-    batch.update(doc(db, 'ahorros_goals', goalId, 'movements', goalMovementId), {
+
+  if (oldGoalId === goalId) {
+    batch.update(movementRef, { type, amount, description, date, persona: goalId ? persona : null })
+    if (goalId && oldGoalMovementId) {
+      batch.update(doc(db, 'ahorros_goals', goalId, 'movements', oldGoalMovementId), {
+        type,
+        amount,
+        description,
+        date,
+        persona,
+      })
+    }
+  } else {
+    if (oldGoalId && oldGoalMovementId) {
+      batch.delete(doc(db, 'ahorros_goals', oldGoalId, 'movements', oldGoalMovementId))
+    }
+    let newGoalMovementId = null
+    if (goalId) {
+      const uid = currentUid()
+      const newGoalMovementRef = doc(collection(db, 'ahorros_goals', goalId, 'movements'))
+      newGoalMovementId = newGoalMovementRef.id
+      batch.set(newGoalMovementRef, {
+        type,
+        amount,
+        description,
+        date,
+        persona,
+        accountId,
+        createdBy: uid,
+        createdAt: serverTimestamp(),
+      })
+    }
+    batch.update(movementRef, {
       type,
       amount,
       description,
       date,
-      persona,
+      goalId,
+      goalMovementId: newGoalMovementId,
+      persona: goalId ? persona : null,
     })
   }
   await batch.commit()

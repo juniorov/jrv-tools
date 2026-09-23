@@ -36,6 +36,7 @@ const editType = ref('ingreso')
 const editAmount = ref(null)
 const editDate = ref('')
 const editDescription = ref('')
+const editGoalId = ref('')
 const editPersona = ref('')
 const editAllowOverdraft = ref(false)
 const editError = ref('')
@@ -103,6 +104,7 @@ function startEdit(movement) {
   editAmount.value = movement.amount
   editDate.value = toDateInputValue(movement.date)
   editDescription.value = movement.description ?? ''
+  editGoalId.value = movement.goalId ?? ''
   editPersona.value = movement.persona ?? ''
   editAllowOverdraft.value = false
   editError.value = ''
@@ -132,7 +134,8 @@ async function saveEdit(movement) {
         amount: Number(editAmount.value),
         description: editDescription.value.trim(),
         date: parseDateInput(editDate.value),
-        persona: movement.goalId ? editPersona.value.trim() || null : null,
+        goalId: editGoalId.value || null,
+        persona: editGoalId.value ? editPersona.value.trim() || null : null,
         allowOverdraft: editAllowOverdraft.value,
       })
     }
@@ -217,7 +220,14 @@ onMounted(loadAll)
               <label class="form-label">Descripción</label>
               <input v-model="editDescription" type="text" class="form-control" />
             </div>
-            <div v-if="!isTransfer(movement) && movement.goalId" class="col-12 col-sm-6">
+            <div v-if="!isTransfer(movement)" class="col-12 col-sm-6">
+              <label class="form-label">Vincular a objetivo (opcional)</label>
+              <select v-model="editGoalId" class="form-select">
+                <option value="">Ninguno</option>
+                <option v-for="g in goals" :key="g.id" :value="g.id">{{ g.name }}</option>
+              </select>
+            </div>
+            <div v-if="!isTransfer(movement) && editGoalId" class="col-12 col-sm-6">
               <label class="form-label">Persona</label>
               <input v-model="editPersona" type="text" class="form-control" />
             </div>

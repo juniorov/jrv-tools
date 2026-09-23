@@ -1,10 +1,25 @@
 <script setup>
+import { computed } from 'vue'
 import { Offcanvas } from 'bootstrap'
-import { RouterLink, RouterView, useRouter } from 'vue-router'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
+
+// En routes.js las páginas de detalle (cuentas/:id, objetivos/:id) son rutas HERMANAS de su
+// listado, no hijas anidadas de ese listado. El active-class por defecto de RouterLink solo
+// marca un link activo cuando el registro de ruta al que apunta aparece en la cadena de rutas
+// coincidentes de la ruta actual, así que en el detalle ese registro "hermano" nunca aparece y
+// el link del listado queda sin marcar. Se calcula a mano contra el nombre de ruta para que el
+// listado se mantenga resaltado también al entrar al detalle correspondiente.
+const isObjetivosActive = computed(
+  () => route.name === 'ahorros-objetivos' || route.name === 'ahorros-objetivo-detail',
+)
+const isCuentasActive = computed(
+  () => route.name === 'ahorros-cuentas' || route.name === 'ahorros-cuenta-detail',
+)
 
 function closeMenu() {
   const el = document.getElementById('ahorrosNav')
@@ -55,7 +70,12 @@ async function handleLogout() {
         <div class="offcanvas-body">
           <ul class="navbar-nav ms-md-auto">
             <li class="nav-item">
-              <RouterLink class="nav-link" to="/ahorros" active-class="active" @click="closeMenu">
+              <RouterLink
+                class="nav-link"
+                to="/ahorros"
+                :class="{ active: isObjetivosActive }"
+                @click="closeMenu"
+              >
                 Objetivos
               </RouterLink>
             </li>
@@ -63,7 +83,7 @@ async function handleLogout() {
               <RouterLink
                 class="nav-link"
                 to="/ahorros/cuentas"
-                active-class="active"
+                :class="{ active: isCuentasActive }"
                 @click="closeMenu"
               >
                 Cuentas
@@ -95,11 +115,11 @@ async function handleLogout() {
   </main>
 
   <nav class="bottom-nav d-md-none">
-    <RouterLink to="/ahorros" class="bottom-nav-item" active-class="active">
+    <RouterLink to="/ahorros" class="bottom-nav-item" :class="{ active: isObjetivosActive }">
       <i class="bi bi-flag-fill"></i>
       <span>Objetivos</span>
     </RouterLink>
-    <RouterLink to="/ahorros/cuentas" class="bottom-nav-item" active-class="active">
+    <RouterLink to="/ahorros/cuentas" class="bottom-nav-item" :class="{ active: isCuentasActive }">
       <i class="bi bi-wallet2"></i>
       <span>Cuentas</span>
     </RouterLink>
