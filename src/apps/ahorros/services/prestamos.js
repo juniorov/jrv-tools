@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuthStore } from '@/stores/auth'
-import { addAccountMovement, deleteAccountMovement } from '@/apps/ahorros/services/movimientos'
+import { addAccountMovement, deleteAccountMovement, updateAccountMovement } from '@/apps/ahorros/services/movimientos'
 
 const loansRef = collection(db, 'ahorros_loans')
 
@@ -84,6 +84,40 @@ export async function createLoan({
     createdAt: serverTimestamp(),
   })
   return docRef.id
+}
+
+/**
+ * Edita los datos de un préstamo (persona, monto, descripción, fecha, objetivo vinculado),
+ * corrigiendo también el movimiento de egreso original en la cuenta vía `updateAccountMovement`
+ * (recalcula el saldo de la cuenta y mueve/actualiza el espejo del objetivo si cambia
+ * `sourceGoalId`). No permite cambiar la cuenta de origen ni bajar el monto por debajo de lo ya
+ * devuelto. El estado (activo/devuelto) no se toca aquí: se maneja aparte con
+ * `markAsReturned`/`reopenLoan` para no revertir un cierre manual del usuario.
+ */
+export async function updateLoan(loanId, { persona, principalAmount, description = null, date, sourceGoalId = null, allowOverdraft = false }) {
+  const loan = await getLoan(loanId)
+  if (!loan) throw new Error('El préstamo no existe')
+  if (principalAmount < loan.amountRepaid) {
+    throw new Error('El monto no puede ser menor a lo ya devuelto.')
+  }
+
+  await updateAccountMovement(loan.sourceAccountId, loan.sourceMovementId, {
+    type: 'egreso',
+    amount: principalAmount,
+    description: description || `Préstamo a ${persona}`,
+    date,
+    goalId: sourceGoalId,
+    persona,
+    allowOverdraft,
+  })
+
+  await updateDoc(doc(db, 'ahorros_loans', loanId), {
+    persona,
+    principalAmount,
+    description,
+    date,
+    sourceGoalId,
+  })
 }
 
 /**

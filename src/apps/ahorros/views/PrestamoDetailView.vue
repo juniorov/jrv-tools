@@ -8,11 +8,14 @@ import {
   getLoanRepayments,
   markAsReturned,
   reopenLoan,
+  updateLoan,
 } from '@/apps/ahorros/services/prestamos'
 import { getAccount } from '@/apps/ahorros/services/cuentas'
-import { getGoal } from '@/apps/ahorros/services/objetivos'
+import { getGoal, getGoals } from '@/apps/ahorros/services/objetivos'
+import PersonaAutocomplete from '@/apps/ahorros/components/PersonaAutocomplete.vue'
 import { formatMoney } from '@/apps/ahorros/utils/currency'
 import { formatDate, todayInputValue } from '@/apps/ahorros/utils/dates'
+import { extractDistinctPersonas } from '@/apps/ahorros/utils/persons'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,12 +25,23 @@ const loan = ref(null)
 const repayments = ref([])
 const account = ref(null)
 const goal = ref(null)
+const goals = ref([])
 const loading = ref(true)
 
 const repaymentAmount = ref(null)
 const repaymentDate = ref(todayInputValue())
 const repaymentAllowOverdraft = ref(false)
 const repaymentError = ref('')
+
+const editingLoan = ref(false)
+const editPersona = ref('')
+const editPrincipalAmount = ref(null)
+const editDescription = ref('')
+const editDate = ref('')
+const editSourceGoalId = ref('')
+const editAllowOverdraft = ref(false)
+const editLoanError = ref('')
+const personaSuggestions = computed(() => extractDistinctPersonas(loan.value ? [{ persona: loan.value.persona }] : []))
 
 const faltante = computed(() => (loan.value ? Math.max(0, loan.value.principalAmount - loan.value.amountRepaid) : 0))
 const progressPct = computed(() =>
@@ -40,16 +54,60 @@ async function loadAll() {
   const loanResult = await getLoan(loanId)
   loan.value = loanResult
   if (loanResult) {
-    const [repaymentsResult, accountResult, goalResult] = await Promise.all([
+    const [repaymentsResult, accountResult, goalResult, goalsResult] = await Promise.all([
       getLoanRepayments(loanId),
       getAccount(loanResult.sourceAccountId),
       loanResult.sourceGoalId ? getGoal(loanResult.sourceGoalId) : Promise.resolve(null),
+      getGoals(),
     ])
     repayments.value = repaymentsResult
     account.value = accountResult
     goal.value = goalResult
+    goals.value = goalsResult
   }
   loading.value = false
+}
+
+function startEditLoan() {
+  editPersona.value = loan.value.persona
+  editPrincipalAmount.value = loan.value.principalAmount
+  editDescription.value = loan.value.description ?? ''
+  editDate.value = loan.value.date
+  editSourceGoalId.value = loan.value.sourceGoalId ?? ''
+  editAllowOverdraft.value = false
+  editLoanError.value = ''
+  editingLoan.value = true
+}
+
+function cancelEditLoan() {
+  editingLoan.value = false
+}
+
+async function saveEditLoan() {
+  editLoanError.value = ''
+  if (!editPersona.value.trim()) {
+    editLoanError.value = 'Ingresa a quién le prestaste.'
+    return
+  }
+  const amount = Number(editPrincipalAmount.value)
+  if (!editPrincipalAmount.value || amount <= 0) {
+    editLoanError.value = 'Ingresa un monto mayor a 0.'
+    return
+  }
+  try {
+    await updateLoan(loanId, {
+      persona: editPersona.value.trim(),
+      principalAmount: amount,
+      description: editDescription.value.trim() || null,
+      date: editDate.value,
+      sourceGoalId: editSourceGoalId.value || null,
+      allowOverdraft: editAllowOverdraft.value,
+    })
+    editingLoan.value = false
+    await loadAll()
+  } catch (err) {
+    editLoanError.value = err.message
+  }
 }
 
 async function handleAddRepayment() {
@@ -96,13 +154,67 @@ onMounted(loadAll)
 <template>
   <div v-if="loading" class="text-muted">Cargando…</div>
   <template v-else-if="loan">
-    <div class="d-flex justify-content-between align-items-center mb-1">
-      <h1 class="h4 mb-0"><i class="bi bi-cash-coin me-2"></i>{{ loan.persona }}</h1>
-      <button class="btn btn-sm btn-outline-danger" title="Eliminar préstamo" @click="handleDelete">
-        <i class="bi bi-trash"></i>
-      </button>
+    <div v-if="editingLoan" class="card shadow-sm border-0 mb-3">
+      <div class="card-body">
+        <form class="row g-2 align-items-end" @submit.prevent="saveEditLoan">
+          <div class="col-12 col-sm-4">
+            <label class="form-label">A quién le prestas</label>
+            <PersonaAutocomplete v-model="editPersona" :suggestions="personaSuggestions" />
+          </div>
+          <div class="col-6 col-sm-2">
+            <label class="form-label">Monto</label>
+            <input v-model="editPrincipalAmount" type="number" step="0.01" min="0.01" class="form-control" required />
+          </div>
+          <div class="col-6 col-sm-3">
+            <label class="form-label">Objetivo vinculado (opcional)</label>
+            <select v-model="editSourceGoalId" class="form-select">
+              <option value="">Ninguno</option>
+              <option v-for="g in goals" :key="g.id" :value="g.id">{{ g.name }}</option>
+            </select>
+          </div>
+          <div class="col-6 col-sm-3">
+            <label class="form-label">Fecha</label>
+            <input v-model="editDate" type="date" class="form-control" required />
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">Descripción (opcional)</label>
+            <input v-model="editDescription" type="text" class="form-control" />
+          </div>
+          <div class="col-12 col-sm-3 d-flex align-items-center">
+            <div class="form-check">
+              <input
+                id="edit-loan-overdraft"
+                v-model="editAllowOverdraft"
+                type="checkbox"
+                class="form-check-input"
+              />
+              <label class="form-check-label" for="edit-loan-overdraft">Permitir descubierto</label>
+            </div>
+          </div>
+          <div class="col-12 d-flex gap-2 justify-content-end">
+            <button type="button" class="btn btn-sm btn-outline-secondary" @click="cancelEditLoan">
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-sm btn-success">Guardar</button>
+          </div>
+          <div v-if="editLoanError" class="col-12">
+            <div class="alert alert-danger py-2 mb-0">{{ editLoanError }}</div>
+          </div>
+        </form>
+      </div>
     </div>
-    <div class="text-muted small mb-3">
+    <div v-else class="d-flex justify-content-between align-items-center mb-1">
+      <h1 class="h4 mb-0"><i class="bi bi-cash-coin me-2"></i>{{ loan.persona }}</h1>
+      <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-outline-secondary" title="Editar préstamo" @click="startEditLoan">
+          <i class="bi bi-pencil"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-danger" title="Eliminar préstamo" @click="handleDelete">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    </div>
+    <div v-if="!editingLoan" class="text-muted small mb-3">
       Desde {{ account?.name ?? '—' }}
       <template v-if="goal">· vinculado al objetivo "{{ goal.name }}"</template>
       · {{ formatDate(loan.date) }}
