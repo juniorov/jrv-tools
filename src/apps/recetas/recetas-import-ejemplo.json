@@ -1,0 +1,47 @@
+{
+  "recetas": [
+    {
+      "name": "Pan casero",
+      "description": "Pan blanco simple, ideal para el desayuno.",
+      "tags": ["panadería", "desayuno"],
+      "yieldType": "servings",
+      "yieldValue": 8,
+      "yieldUnit": "porciones",
+      "ingredients": [
+        { "name": "Harina", "quantity": 500, "unit": "g" },
+        { "name": "Agua tibia", "quantity": 300, "unit": "ml" },
+        { "name": "Levadura seca", "quantity": 7, "unit": "g" },
+        { "name": "Sal", "quantity": 10, "unit": "g" },
+        { "name": "Azúcar", "quantity": 15, "unit": "g" }
+      ],
+      "steps": [
+        "Disolver la levadura y el azúcar en el agua tibia y dejar reposar 10 minutos.",
+        "Mezclar la harina con la sal en un bowl grande.",
+        "Incorporar el agua con levadura y amasar 10 minutos hasta lograr una masa lisa.",
+        "Dejar levar tapado durante 1 hora o hasta que duplique su tamaño.",
+        "Formar el pan, dejar levar 30 minutos más y hornear a 200°C por 30-35 minutos."
+      ]
+    },
+    {
+      "name": "Salsa de tomate casera",
+      "description": "Salsa base para pastas, rinde una cantidad fija en gramos.",
+      "tags": ["salsas", "sin lácteos", "vegano"],
+      "yieldType": "amount",
+      "yieldValue": 750,
+      "yieldUnit": "g",
+      "ingredients": [
+        { "name": "Tomate perita", "quantity": 1000, "unit": "g" },
+        { "name": "Cebolla", "quantity": 100, "unit": "g" },
+        { "name": "Ajo", "quantity": 10, "unit": "g" },
+        { "name": "Aceite de oliva", "quantity": 30, "unit": "ml" },
+        { "name": "Sal", "quantity": 5, "unit": "g" }
+      ],
+      "steps": [
+        "Picar finamente la cebolla y el ajo.",
+        "Rehogar en aceite de oliva hasta que la cebolla esté transparente.",
+        "Agregar el tomate triturado y la sal.",
+        "Cocinar a fuego bajo durante 30 minutos, revolviendo ocasionalmente."
+      ]
+    }
+  ]
+}

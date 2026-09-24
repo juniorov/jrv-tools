@@ -61,6 +61,15 @@ export async function createRecipe({
   return docRef.id
 }
 
+/** Importa varias recetas ya normalizadas (ver utils/recipeImport.js) de una sola vez. */
+export async function importRecipes(recipes) {
+  const ids = []
+  for (const recipe of recipes) {
+    ids.push(await createRecipe(recipe))
+  }
+  return ids
+}
+
 export async function updateRecipe(recipeId, { name, description, steps, tags, yieldType, yieldValue, yieldUnit, ingredients }) {
   await updateDoc(doc(db, 'recetas_recipes', recipeId), {
     name,
