@@ -1,9 +1,10 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { deleteActiveSession, finishSession, getActiveSession, updateSessionProgress } from '../services/sesiones'
 import { getWorkouts } from '../services/entrenamientos'
 import { formatElapsed, groupStepsForDisplay, stepsToExercises } from '../utils/session'
+import { formatDate } from '../utils/dates'
 import { workoutVolume } from '../utils/progress'
 import { kgToLb, lbToKg } from '../utils/units'
 
@@ -115,6 +116,12 @@ async function loadPreviousValues(routineId) {
   previousValues.value = map
 }
 
+function formatSummarySet(set) {
+  const weightLabel = set.weight ? `${set.weight}kg` : ''
+  if (set.seconds != null) return weightLabel ? `${set.seconds}s · ${weightLabel}` : `${set.seconds}s`
+  return weightLabel ? `${set.reps} x ${weightLabel}` : `${set.reps} reps`
+}
+
 function weightDisplay(step) {
   if (step.weight == null) return null
   return unitFor(step.exerciseName) === 'lb' ? kgToLb(step.weight) : step.weight
@@ -141,10 +148,39 @@ function startRest(seconds) {
   }, 1000)
 }
 
+let lastDoneStep = null
+
+function stepDomId(step) {
+  return `step-${session.value.steps.indexOf(step)}`
+}
+
+function scrollToElementId(id) {
+  nextTick(() => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  })
+}
+
+function scrollToStep(step) {
+  if (step) scrollToElementId(stepDomId(step))
+}
+
+// El siguiente step pendiente en el orden de la sesión: para un superset (steps intercalados,
+// ver session.js) es el otro ejercicio del par; si no hay superset, es la siguiente serie del
+// mismo ejercicio.
+function nextPendingStep(afterStep) {
+  const steps = session.value.steps
+  const startIndex = steps.indexOf(afterStep) + 1
+  for (let i = startIndex; i < steps.length; i++) {
+    if (!steps[i].done) return steps[i]
+  }
+  return null
+}
+
 function skipRest() {
   clearInterval(restTimer)
   resting.value = false
   restRemaining.value = 0
+  scrollToStep(nextPendingStep(lastDoneStep))
 }
 
 async function persist() {
@@ -158,7 +194,15 @@ async function toggleDone(step) {
   saving.value = true
   try {
     await persist()
-    if (!wasDone && restEnabled(step.exerciseName)) startRest(restSecondsFor(step.exerciseName))
+    if (!wasDone) {
+      lastDoneStep = step
+      if (restEnabled(step.exerciseName)) {
+        startRest(restSecondsFor(step.exerciseName))
+        scrollToElementId('rest-banner')
+      } else {
+        scrollToStep(nextPendingStep(step))
+      }
+    }
   } catch (err) {
     step.done = wasDone
     error.value = err.message
@@ -218,22 +262,43 @@ onUnmounted(() => {
     <div v-if="loading" class="text-muted">Cargando...</div>
 
     <div v-else-if="summary" class="summary-panel">
-      <h1 class="h4 mb-3"><i class="bi bi-trophy-fill me-2"></i>¡Entrenamiento completado!</h1>
-      <div class="stats-row mb-4">
-        <div class="stat-card">
-          <div class="stat-value">{{ formatElapsed(summary.durationMs) }}</div>
-          <div class="stat-label">Duración</div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <div class="summary-title"><i class="bi bi-trophy-fill me-2"></i>{{ summary.routineName || 'Entrenamiento libre' }}</div>
+          <div class="summary-date">{{ formatDate(summary.finishedAt) }}</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-value">{{ summary.totalVolume.toLocaleString('es-CR') }}</div>
-          <div class="stat-label">Volumen (kg)</div>
+
+        <div class="stats-row mb-3">
+          <div class="stat-card">
+            <div class="stat-value">{{ formatElapsed(summary.durationMs) }}</div>
+            <div class="stat-label">Duración</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ summary.totalVolume.toLocaleString('es-CR') }}</div>
+            <div class="stat-label">Volumen (kg)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ summary.totalSets }}</div>
+            <div class="stat-label">Series</div>
+          </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-value">{{ summary.totalReps }}</div>
-          <div class="stat-label">Reps totales</div>
+
+        <div v-if="summary.skippedSets > 0" class="summary-warning">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>
+          {{ summary.skippedSets }} serie(s) con datos cargados pero sin marcar como "lista" no se incluyeron arriba.
+        </div>
+
+        <div class="summary-exercises">
+          <div v-for="exercise in summary.exercises" :key="exercise.name" class="summary-exercise">
+            <div class="summary-exercise-name">{{ exercise.name }}</div>
+            <div class="summary-sets">
+              <span v-for="(set, i) in exercise.sets" :key="i" class="summary-set-chip">{{ i + 1 }}. {{ formatSummarySet(set) }}</span>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="d-flex gap-2">
+
+      <div class="d-flex gap-2 mt-3">
         <RouterLink :to="{ name: 'gym-log-entrenamientos' }" class="btn btn-primary">Ver historial</RouterLink>
         <RouterLink :to="{ name: 'gym-log-dashboard' }" class="btn btn-outline-secondary">Ir al progreso</RouterLink>
       </div>
@@ -269,7 +334,7 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div v-if="resting" class="rest-banner">
+      <div v-if="resting" id="rest-banner" class="rest-banner">
         <span class="rest-label">Descanso</span>
         <span class="rest-countdown">{{ restRemaining }}s</span>
         <button type="button" class="btn btn-sm btn-outline-secondary" @click="skipRest">Saltar</button>
@@ -345,6 +410,7 @@ onUnmounted(() => {
           <div
             v-for="{ step } in group.items"
             :key="step.setNumber"
+            :id="stepDomId(step)"
             class="sets-row"
             :class="{ 'set-done': step.done }"
           >
@@ -414,6 +480,73 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.75rem;
+}
+
+.summary-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+}
+
+.summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.summary-title {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.summary-date {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.summary-warning {
+  font-size: var(--font-size-sm);
+  color: var(--color-warning);
+  background-color: var(--color-warning-bg);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.summary-exercises {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.summary-exercise {
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.6rem;
+}
+
+.summary-exercise-name {
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.summary-sets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.summary-set-chip {
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.5rem;
 }
 
 .stat-card {

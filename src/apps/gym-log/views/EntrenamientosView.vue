@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import { deleteWorkout, getWorkouts } from '../services/entrenamientos'
 import { formatDate, parseDateInput } from '../utils/dates'
 import { workoutVolume } from '../utils/progress'
@@ -49,9 +50,17 @@ onMounted(load)
             {{ workout.exercises.length }} ejercicios · {{ workoutVolume(workout).toLocaleString('es-CR') }} kg
           </div>
         </div>
-        <button type="button" class="btn btn-sm btn-outline-danger" @click="handleDelete(workout)">
-          <i class="bi bi-trash"></i>
-        </button>
+        <div class="d-flex gap-2">
+          <RouterLink
+            :to="{ name: 'gym-log-registrar', query: { id: workout.id } }"
+            class="btn btn-sm btn-outline-secondary"
+          >
+            <i class="bi bi-pencil"></i>
+          </RouterLink>
+          <button type="button" class="btn btn-sm btn-outline-danger" @click="handleDelete(workout)">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
       </div>
     </div>
   </div>

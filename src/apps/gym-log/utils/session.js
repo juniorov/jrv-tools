@@ -140,11 +140,17 @@ export function sessionSummary(session, finishedAt = Date.now()) {
   const totalSeconds = session.steps
     .filter((s) => s.done && s.metric === 'time')
     .reduce((sum, s) => sum + (Number(s.seconds) || 0), 0)
+  const totalSets = session.steps.filter((s) => s.done).length
+  const skippedSets = session.steps.filter((s) => !s.done && (s.weight != null || s.reps != null || s.seconds != null)).length
 
   return {
+    routineName: session.routineName,
+    finishedAt,
     durationMs: finishedAt - session.startedAt,
     totalVolume,
     totalReps,
+    totalSets,
+    skippedSets,
     totalSeconds,
     exercises,
   }

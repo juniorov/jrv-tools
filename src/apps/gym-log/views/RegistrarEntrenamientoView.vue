@@ -1,12 +1,14 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { logWorkout } from '../services/entrenamientos'
+import { useRoute, useRouter } from 'vue-router'
+import { getWorkout, logWorkout, updateWorkout } from '../services/entrenamientos'
 import { getRoutines } from '../services/rutinas'
 import { todayInputValue } from '../utils/dates'
 import { kgToLb, lbToKg } from '../utils/units'
 
 const router = useRouter()
+const route = useRoute()
+const editingId = computed(() => route.query.id || null)
 
 const routines = ref([])
 const selectedRoutineId = ref('')
@@ -46,6 +48,28 @@ function loadFromRoutine() {
   exercises.value = selectedRoutine.value ? exercisesFromRoutine(selectedRoutine.value) : []
 }
 
+const originalWorkout = ref(null)
+
+function hydrateSetForEdit(set) {
+  return { ...set, unit: 'kg' }
+}
+
+async function loadForEdit(id) {
+  const workout = await getWorkout(id)
+  if (!workout) {
+    error.value = 'El entrenamiento no existe'
+    return
+  }
+  originalWorkout.value = { routineId: workout.routineId ?? null, routineName: workout.routineName ?? '' }
+  date.value = workout.date
+  notes.value = workout.notes ?? ''
+  exercises.value = workout.exercises.map((exercise) => ({
+    name: exercise.name,
+    metric: exercise.metric ?? 'reps',
+    sets: exercise.sets.map(hydrateSetForEdit),
+  }))
+}
+
 function addFreeExercise() {
   exercises.value.push({ name: '', metric: 'reps', sets: [blankSet('reps')] })
 }
@@ -79,13 +103,23 @@ async function save() {
       ...exercise,
       sets: exercise.sets.map(({ unit, ...set }) => set),
     }))
-    await logWorkout({
-      date: date.value,
-      routineId: selectedRoutine.value?.id ?? null,
-      routineName: selectedRoutine.value?.name ?? '',
-      exercises: exercisesInKg,
-      notes: notes.value,
-    })
+    if (editingId.value) {
+      await updateWorkout(editingId.value, {
+        date: date.value,
+        routineId: originalWorkout.value.routineId,
+        routineName: originalWorkout.value.routineName,
+        exercises: exercisesInKg,
+        notes: notes.value,
+      })
+    } else {
+      await logWorkout({
+        date: date.value,
+        routineId: selectedRoutine.value?.id ?? null,
+        routineName: selectedRoutine.value?.name ?? '',
+        exercises: exercisesInKg,
+        notes: notes.value,
+      })
+    }
     router.push({ name: 'gym-log-entrenamientos' })
   } catch (err) {
     error.value = err.message
@@ -97,6 +131,7 @@ async function save() {
 onMounted(async () => {
   try {
     routines.value = await getRoutines()
+    if (editingId.value) await loadForEdit(editingId.value)
   } catch (err) {
     error.value = err.message
   } finally {
@@ -107,7 +142,7 @@ onMounted(async () => {
 
 <template>
   <div class="registrar-view">
-    <h1 class="h4 mb-3">Registrar entrenamiento</h1>
+    <h1 class="h4 mb-3">{{ editingId ? 'Editar entrenamiento' : 'Registrar entrenamiento' }}</h1>
 
     <div v-if="error" class="alert alert-danger">{{ error }}</div>
     <div v-if="loading" class="text-muted">Cargando...</div>
@@ -118,7 +153,7 @@ onMounted(async () => {
           <label class="form-label">Fecha</label>
           <input v-model="date" type="date" class="form-control" required />
         </div>
-        <div class="col-12 col-md-6">
+        <div v-if="!editingId" class="col-12 col-md-6">
           <label class="form-label">Rutina (opcional)</label>
           <select v-model="selectedRoutineId" class="form-select" @change="loadFromRoutine">
             <option value="">Entrenamiento libre</option>
@@ -188,7 +223,7 @@ onMounted(async () => {
       </div>
 
       <button type="submit" class="btn btn-primary" :disabled="saving">
-        {{ saving ? 'Guardando...' : 'Guardar entrenamiento' }}
+        {{ saving ? 'Guardando...' : editingId ? 'Guardar cambios' : 'Guardar entrenamiento' }}
       </button>
     </form>
   </div>

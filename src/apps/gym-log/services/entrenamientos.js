@@ -48,8 +48,8 @@ export async function logWorkout({ date, routineId = null, routineName = '', exe
   return docRef.id
 }
 
-export async function updateWorkout(workoutId, { date, exercises, notes }) {
-  await updateDoc(doc(db, 'gym_log_workouts', workoutId), { date, exercises, notes })
+export async function updateWorkout(workoutId, { date, exercises, notes, routineId, routineName }) {
+  await updateDoc(doc(db, 'gym_log_workouts', workoutId), { date, exercises, notes, routineId, routineName })
 }
 
 export async function deleteWorkout(workoutId) {

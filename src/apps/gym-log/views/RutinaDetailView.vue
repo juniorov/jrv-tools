@@ -50,6 +50,15 @@ function removeExercise(index) {
   routine.value.exercises.splice(index, 1)
 }
 
+// Los supersets se agrupan por posición (ejercicios consecutivos con el mismo `supersetGroup`),
+// así que reordenar es necesario para armar un grupo cuando la rutina no vino ya ordenada así.
+function moveExercise(index, delta) {
+  const target = index + delta
+  if (target < 0 || target >= routine.value.exercises.length) return
+  const exercises = routine.value.exercises
+  ;[exercises[index], exercises[target]] = [exercises[target], exercises[index]]
+}
+
 // Colores para la barra que marca visualmente los ejercicios agrupados en superset (igual que
 // la barra de color de Hevy), asignados de forma estable según el valor de supersetGroup.
 const SUPERSET_COLORS = ['#7c3aed', '#0d9488', '#d97706', '#2563eb', '#db2777']
@@ -159,8 +168,26 @@ onMounted(load)
               placeholder="Grupo (superset)"
             />
           </div>
-          <div class="col-4 col-md-2 d-flex align-items-start">
-            <button type="button" class="btn btn-outline-danger w-100" @click="removeExercise(index)">
+          <div class="col-4 col-md-2 d-flex align-items-start gap-1">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              :disabled="index === 0"
+              title="Mover arriba"
+              @click="moveExercise(index, -1)"
+            >
+              <i class="bi bi-arrow-up"></i>
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              :disabled="index === routine.exercises.length - 1"
+              title="Mover abajo"
+              @click="moveExercise(index, 1)"
+            >
+              <i class="bi bi-arrow-down"></i>
+            </button>
+            <button type="button" class="btn btn-outline-danger flex-grow-1" @click="removeExercise(index)">
               <i class="bi bi-trash"></i>
             </button>
           </div>
