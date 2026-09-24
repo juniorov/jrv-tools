@@ -34,9 +34,15 @@ const benchedBySlot = computed(() =>
   })),
 )
 
+function recipeOptionLabel(recipe) {
+  if (!recipe) return 'Sin asignar'
+  const mealTypesLabel = (recipe.mealTypes || []).join(', ')
+  return mealTypesLabel ? `${recipe.name} (${mealTypesLabel})` : recipe.name
+}
+
 function recipeName(recipeId) {
   if (!recipeId) return 'Sin asignar'
-  return recipes.value.find((r) => r.id === recipeId)?.name ?? 'Sin asignar'
+  return recipeOptionLabel(recipes.value.find((r) => r.id === recipeId))
 }
 
 async function load() {
@@ -207,7 +213,7 @@ onMounted(load)
                 @change="handleTemplateChange(row.dayIndex, slot.key, $event)"
               >
                 <option value="">Sin asignar</option>
-                <option v-for="r in platilloRecipes" :key="r.id" :value="r.id">{{ r.name }}</option>
+                <option v-for="r in platilloRecipes" :key="r.id" :value="r.id">{{ recipeOptionLabel(r) }}</option>
               </select>
             </div>
             <div class="control-group">
@@ -219,7 +225,7 @@ onMounted(load)
               >
                 <option value="__none__">— sin cambio —</option>
                 <option value="">Sin asignar</option>
-                <option v-for="r in platilloRecipes" :key="r.id" :value="r.id">{{ r.name }}</option>
+                <option v-for="r in platilloRecipes" :key="r.id" :value="r.id">{{ recipeOptionLabel(r) }}</option>
               </select>
             </div>
           </div>
