@@ -70,8 +70,13 @@ onMounted(load)
 
       <p v-if="recipe.description" class="text-muted">{{ recipe.description }}</p>
 
-      <div v-if="recipe.tags?.length" class="mb-3">
+      <div v-if="recipe.tags?.length" class="mb-2">
         <span v-for="tag in recipe.tags" :key="tag" class="badge text-bg-light me-1">{{ tag }}</span>
+      </div>
+
+      <div v-if="recipe.mealTypes?.length || recipe.goals?.length" class="mb-3">
+        <span v-for="mt in recipe.mealTypes" :key="mt" class="badge text-bg-info me-1">{{ mt }}</span>
+        <span v-for="g in recipe.goals" :key="g" class="badge text-bg-success me-1">{{ g }}</span>
       </div>
 
       <div class="mb-4">

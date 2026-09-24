@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { filterRecipesByIngredients, normalizeIngredientName, recipeMatchesIngredients } from './matching'
+import { filterRecipesByIngredients, normalizeIngredientName, recipeMatchesIngredients, searchRecipesByText } from './matching'
 
 function recipe(name, ingredientNames) {
   return { name, ingredients: ingredientNames.map((n) => ({ name: n, quantity: 1, unit: 'g' })) }
@@ -35,6 +35,16 @@ describe('recipeMatchesIngredients', () => {
     const r = recipe('Agua', [])
     expect(recipeMatchesIngredients(r, [])).toBe(true)
   })
+
+  it('coincide parcialmente (ej. "oliva" cubre "Aceite de oliva")', () => {
+    const r = recipe('Marinada', ['Aceite de oliva', 'Sal'])
+    expect(recipeMatchesIngredients(r, ['oliva', 'sal'])).toBe(true)
+  })
+
+  it('coincide parcialmente en sentido inverso (término disponible más específico)', () => {
+    const r = recipe('Marinada', ['Aceite'])
+    expect(recipeMatchesIngredients(r, ['aceite de oliva'])).toBe(true)
+  })
 })
 
 describe('filterRecipesByIngredients', () => {
@@ -48,5 +58,22 @@ describe('filterRecipesByIngredients', () => {
     const pure = recipe('Puré', ['papa', 'leche'])
     const result = filterRecipesByIngredients([arroz, pure], ['arroz', 'sal'])
     expect(result).toEqual([arroz])
+  })
+})
+
+describe('searchRecipesByText', () => {
+  const marinada = recipe('Marinada de ajo', ['Aceite de oliva', 'Ajo'])
+  const pure = recipe('Puré', ['Papa', 'Leche'])
+
+  it('encuentra recetas por ingrediente aunque no tengan todos los demás', () => {
+    expect(searchRecipesByText([marinada, pure], 'oliva')).toEqual([marinada])
+  })
+
+  it('encuentra recetas por nombre', () => {
+    expect(searchRecipesByText([marinada, pure], 'puré')).toEqual([pure])
+  })
+
+  it('sin texto devuelve todas las recetas', () => {
+    expect(searchRecipesByText([marinada, pure], '')).toEqual([marinada, pure])
   })
 })

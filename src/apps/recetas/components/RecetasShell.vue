@@ -1,11 +1,19 @@
 <script setup>
+import { computed } from 'vue'
 import { Offcanvas } from 'bootstrap'
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
+
+// "Progreso" tiene rutas hermanas (listado + nueva/editar), así que el active-class por
+// defecto de RouterLink no alcanza para el listado cuando se está en una de esas hermanas
+// (mismo problema resuelto en AhorrosShell.vue).
+const isProgresoActive = computed(
+  () => route.name === 'recetas-progreso' || route.name === 'recetas-progreso-nueva' || route.name === 'recetas-progreso-editar',
+)
 
 function closeMenu() {
   const el = document.getElementById('recetasNav')
@@ -70,6 +78,26 @@ async function handleLogout() {
                 Recetario
               </RouterLink>
             </li>
+            <li class="nav-item">
+              <RouterLink
+                class="nav-link"
+                to="/recetas/menu-semanal"
+                active-class="active"
+                @click="closeMenu"
+              >
+                Menú semanal
+              </RouterLink>
+            </li>
+            <li class="nav-item">
+              <RouterLink
+                class="nav-link"
+                to="/recetas/progreso"
+                :class="{ active: isProgresoActive }"
+                @click="closeMenu"
+              >
+                Progreso
+              </RouterLink>
+            </li>
             <li v-if="authStore.isAuthenticated" class="nav-item">
               <button class="nav-link btn btn-link" @click="handleLogout">
                 <i class="bi bi-box-arrow-right me-1"></i>Salir
@@ -93,6 +121,14 @@ async function handleLogout() {
     <RouterLink to="/recetas/recetario" class="bottom-nav-item" active-class="active">
       <i class="bi bi-journal-text"></i>
       <span>Recetario</span>
+    </RouterLink>
+    <RouterLink to="/recetas/menu-semanal" class="bottom-nav-item" active-class="active">
+      <i class="bi bi-calendar-week"></i>
+      <span>Menú</span>
+    </RouterLink>
+    <RouterLink to="/recetas/progreso" class="bottom-nav-item" :class="{ active: isProgresoActive }">
+      <i class="bi bi-graph-up"></i>
+      <span>Progreso</span>
     </RouterLink>
   </nav>
 </template>

@@ -141,6 +141,21 @@ service cloud.firestore {
       allow create: if isOwner(request.resource.data.ownerId);
     }
 
+    match /recetas_body_metrics/{metricId} {
+      allow read, update, delete: if isOwner(resource.data.ownerId);
+      allow create: if isOwner(request.resource.data.ownerId);
+    }
+
+    // Doc id = uid: plantilla recurrente del menú semanal, y su intercambio puntual de la
+    // semana en curso (mismo patrón que gym_log_weekly_plan / gym_log_week_overrides).
+    match /recetas_weekly_menu/{uid} {
+      allow read, write: if isOwner(uid);
+    }
+
+    match /recetas_week_menu_overrides/{uid} {
+      allow read, write: if isOwner(uid);
+    }
+
     // Compartida entre apps: resuelve email -> uid para invitar a objetivos de ahorros.
     match /users_by_email/{email} {
       allow read: if isSignedIn();

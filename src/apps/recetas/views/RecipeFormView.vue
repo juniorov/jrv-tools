@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import IngredientRows from '../components/IngredientRows.vue'
 import { createRecipe, getRecipe, updateRecipe } from '../services/recipes'
+import { FITNESS_GOALS, MEAL_TYPES } from '../utils/recipeTags'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,6 +18,8 @@ const name = ref('')
 const description = ref('')
 const stepsText = ref('')
 const tagsText = ref('')
+const mealTypes = ref([])
+const goals = ref([])
 const yieldType = ref('servings')
 const yieldValue = ref(null)
 const yieldUnit = ref('')
@@ -35,6 +38,8 @@ async function load() {
     description.value = recipe.description || ''
     stepsText.value = (recipe.steps || []).join('\n')
     tagsText.value = (recipe.tags || []).join(', ')
+    mealTypes.value = recipe.mealTypes || []
+    goals.value = recipe.goals || []
     yieldType.value = recipe.yieldType
     yieldValue.value = recipe.yieldValue
     yieldUnit.value = recipe.yieldType === 'amount' ? recipe.yieldUnit : ''
@@ -69,6 +74,8 @@ async function save() {
       description: description.value.trim(),
       steps: stepsText.value.split('\n').map((s) => s.trim()).filter(Boolean),
       tags: tagsText.value.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean),
+      mealTypes: mealTypes.value,
+      goals: goals.value,
       yieldType: yieldType.value,
       yieldValue: Number(yieldValue.value),
       yieldUnit: yieldType.value === 'amount' ? yieldUnit.value.trim() : 'porciones',
@@ -114,6 +121,23 @@ onMounted(load)
       <div class="mb-3">
         <label class="form-label">Etiquetas (separadas por coma)</label>
         <input v-model="tagsText" type="text" class="form-control" placeholder="panadería, sin lácteos" />
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-6">
+          <label class="form-label d-block">Tipo de comida</label>
+          <div v-for="mt in MEAL_TYPES" :key="mt" class="form-check form-check-inline">
+            <input :id="`mealType-${mt}`" v-model="mealTypes" class="form-check-input" type="checkbox" :value="mt" />
+            <label class="form-check-label" :for="`mealType-${mt}`">{{ mt }}</label>
+          </div>
+        </div>
+        <div class="col-6">
+          <label class="form-label d-block">Objetivos</label>
+          <div v-for="g in FITNESS_GOALS" :key="g" class="form-check">
+            <input :id="`goal-${g}`" v-model="goals" class="form-check-input" type="checkbox" :value="g" />
+            <label class="form-check-label" :for="`goal-${g}`">{{ g }}</label>
+          </div>
+        </div>
       </div>
 
       <div class="row g-2 mb-3">

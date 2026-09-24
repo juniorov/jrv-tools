@@ -2,6 +2,7 @@
 //
 // { "recetas": [
 //     { "name": "Pan casero", "description": "...", "tags": ["panadería"],
+//       "mealTypes": ["Desayuno"], "goals": ["Tonificar"],
 //       "yieldType": "servings", "yieldValue": 8, "yieldUnit": "porciones",
 //       "ingredients": [ { "name": "Harina", "quantity": 500, "unit": "g" } ],
 //       "steps": [ "Mezclar todo.", "Hornear 30 minutos." ] }
@@ -13,7 +14,15 @@
 //
 // `description`, `tags` y `steps` son opcionales (default '' / [] / []).
 //
+// `mealTypes` (opcional, default []) indica para qué comidas sirve la receta:
+// "Desayuno", "Almuerzo" y/o "Cena". `goals` (opcional, default []) indica para qué objetivos
+// fitness sirve: "Aumento de masa muscular", "Tonificar", "Pérdida de grasa" y/o "Cualquiera".
+// Una receta sin estos campos se considera válida para cualquier comida/objetivo. Los valores
+// no reconocidos se descartan sin generar error.
+//
 // También se acepta una sola receta como objeto raíz (sin el wrapper "recetas").
+
+import { normalizeGoals, normalizeMealTypes } from './recipeTags'
 
 function normalizeIngredient(raw, recipeName, index) {
   if (!raw || typeof raw.name !== 'string' || !raw.name.trim()) {
@@ -47,6 +56,8 @@ function normalizeRecipe(raw, index) {
     name: raw.name.trim(),
     description: typeof raw.description === 'string' ? raw.description.trim() : '',
     tags: Array.isArray(raw.tags) ? raw.tags.map((t) => String(t).trim().toLowerCase()).filter(Boolean) : [],
+    mealTypes: normalizeMealTypes(raw.mealTypes),
+    goals: normalizeGoals(raw.goals),
     yieldType,
     yieldValue: Number(raw.yieldValue),
     yieldUnit: yieldType === 'servings' ? 'porciones' : raw.yieldUnit.trim(),

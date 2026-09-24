@@ -38,6 +38,8 @@ export async function createRecipe({
   description = '',
   steps = [],
   tags = [],
+  mealTypes = [],
+  goals = [],
   yieldType,
   yieldValue,
   yieldUnit,
@@ -51,6 +53,8 @@ export async function createRecipe({
     description,
     steps,
     tags,
+    mealTypes,
+    goals,
     yieldType,
     yieldValue,
     yieldUnit: yieldType === 'servings' ? 'porciones' : yieldUnit,
@@ -70,12 +74,17 @@ export async function importRecipes(recipes) {
   return ids
 }
 
-export async function updateRecipe(recipeId, { name, description, steps, tags, yieldType, yieldValue, yieldUnit, ingredients }) {
+export async function updateRecipe(
+  recipeId,
+  { name, description, steps, tags, mealTypes = [], goals = [], yieldType, yieldValue, yieldUnit, ingredients },
+) {
   await updateDoc(doc(db, 'recetas_recipes', recipeId), {
     name,
     description,
     steps,
     tags,
+    mealTypes,
+    goals,
     yieldType,
     yieldValue,
     yieldUnit: yieldType === 'servings' ? 'porciones' : yieldUnit,

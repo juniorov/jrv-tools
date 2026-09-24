@@ -1,8 +1,9 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { deleteRecipe, getRecipes, importRecipes } from '../services/recipes'
 import { parseRecipesFile } from '../utils/recipeImport'
+import { searchRecipesByText } from '../utils/matching'
 
 const recipes = ref([])
 const loading = ref(true)
@@ -10,6 +11,9 @@ const error = ref('')
 const importError = ref('')
 const importing = ref(false)
 const fileInput = ref(null)
+const searchText = ref('')
+
+const filteredRecipes = computed(() => searchRecipesByText(recipes.value, searchText.value))
 
 async function load() {
   loading.value = true
@@ -87,15 +91,27 @@ onMounted(load)
       de forma opcional.
     </p>
 
+    <div class="mb-3">
+      <input
+        v-model="searchText"
+        type="search"
+        class="form-control"
+        placeholder="Buscar por nombre de receta o ingrediente (ej. oliva)"
+      />
+    </div>
+
     <div v-if="importError" class="alert alert-danger">{{ importError }}</div>
     <div v-if="error" class="alert alert-danger">{{ error }}</div>
     <div v-else-if="loading" class="text-muted">Cargando...</div>
     <div v-else-if="recipes.length === 0" class="text-muted">
       Todavía no cargaste ninguna receta.
     </div>
+    <div v-else-if="filteredRecipes.length === 0" class="text-muted">
+      No se encontraron recetas para "{{ searchText }}".
+    </div>
 
     <ul v-else class="list-group">
-      <li v-for="recipe in recipes" :key="recipe.id" class="list-group-item d-flex justify-content-between align-items-center">
+      <li v-for="recipe in filteredRecipes" :key="recipe.id" class="list-group-item d-flex justify-content-between align-items-center">
         <RouterLink :to="{ name: 'recetas-detalle', params: { id: recipe.id } }" class="recipe-link">
           <span class="fw-semibold">{{ recipe.name }}</span>
           <span class="text-muted ms-2">{{ yieldLabel(recipe) }} · {{ recipe.ingredients.length }} ingredientes</span>
