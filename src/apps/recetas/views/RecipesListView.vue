@@ -4,6 +4,7 @@ import { RouterLink } from 'vue-router'
 import { deleteRecipe, getRecipes, importRecipes } from '../services/recipes'
 import { parseRecipesFile } from '../utils/recipeImport'
 import { searchRecipesByText } from '../utils/matching'
+import { RECIPE_TYPES } from '../utils/recipeTags'
 
 const recipes = ref([])
 const loading = ref(true)
@@ -12,8 +13,14 @@ const importError = ref('')
 const importing = ref(false)
 const fileInput = ref(null)
 const searchText = ref('')
+const recipeTypeFilter = ref('')
 
-const filteredRecipes = computed(() => searchRecipesByText(recipes.value, searchText.value))
+const filteredRecipes = computed(() => {
+  const byText = searchRecipesByText(recipes.value, searchText.value)
+  if (!recipeTypeFilter.value) return byText
+  if (recipeTypeFilter.value === '__sin_clasificar__') return byText.filter((r) => !r.recipeType)
+  return byText.filter((r) => r.recipeType === recipeTypeFilter.value)
+})
 
 async function load() {
   loading.value = true
@@ -91,13 +98,22 @@ onMounted(load)
       de forma opcional.
     </p>
 
-    <div class="mb-3">
-      <input
-        v-model="searchText"
-        type="search"
-        class="form-control"
-        placeholder="Buscar por nombre de receta o ingrediente (ej. oliva)"
-      />
+    <div class="row g-2 mb-3">
+      <div class="col-12 col-sm-8">
+        <input
+          v-model="searchText"
+          type="search"
+          class="form-control"
+          placeholder="Buscar por nombre de receta o ingrediente (ej. oliva)"
+        />
+      </div>
+      <div class="col-12 col-sm-4">
+        <select v-model="recipeTypeFilter" class="form-select">
+          <option value="">Todas las clasificaciones</option>
+          <option v-for="rt in RECIPE_TYPES" :key="rt" :value="rt">{{ rt }}</option>
+          <option value="__sin_clasificar__">Sin clasificar</option>
+        </select>
+      </div>
     </div>
 
     <div v-if="importError" class="alert alert-danger">{{ importError }}</div>
@@ -107,7 +123,7 @@ onMounted(load)
       Todavía no cargaste ninguna receta.
     </div>
     <div v-else-if="filteredRecipes.length === 0" class="text-muted">
-      No se encontraron recetas para "{{ searchText }}".
+      No se encontraron recetas con esos filtros.
     </div>
 
     <ul v-else class="list-group">
