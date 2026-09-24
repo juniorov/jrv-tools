@@ -20,9 +20,13 @@
 // Una receta sin estos campos se considera válida para cualquier comida/objetivo. Los valores
 // no reconocidos se descartan sin generar error.
 //
+// `recipeType` (opcional, default "") clasifica la receta como "Platillo" o "Marinada/Adobo".
+// Solo las recetas marcadas como "Platillo" se ofrecen en el menú semanal; un valor ausente o
+// no reconocido queda sin clasificar (no cuenta como "Platillo").
+//
 // También se acepta una sola receta como objeto raíz (sin el wrapper "recetas").
 
-import { normalizeGoals, normalizeMealTypes } from './recipeTags'
+import { normalizeGoals, normalizeMealTypes, normalizeRecipeType } from './recipeTags'
 
 function normalizeIngredient(raw, recipeName, index) {
   if (!raw || typeof raw.name !== 'string' || !raw.name.trim()) {
@@ -58,6 +62,7 @@ function normalizeRecipe(raw, index) {
     tags: Array.isArray(raw.tags) ? raw.tags.map((t) => String(t).trim().toLowerCase()).filter(Boolean) : [],
     mealTypes: normalizeMealTypes(raw.mealTypes),
     goals: normalizeGoals(raw.goals),
+    recipeType: normalizeRecipeType(raw.recipeType),
     yieldType,
     yieldValue: Number(raw.yieldValue),
     yieldUnit: yieldType === 'servings' ? 'porciones' : raw.yieldUnit.trim(),

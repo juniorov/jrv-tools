@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import { getRecipes } from '../services/recipes'
 import {
   clearWeekMenuOverride,
@@ -8,7 +9,7 @@ import {
   setTemplateSlot,
   setWeekMenuOverride,
 } from '../services/weeklyMenu'
-import { FITNESS_GOALS } from '../utils/recipeTags'
+import { FITNESS_GOALS, isPlatillo } from '../utils/recipeTags'
 import { DAY_LABELS, MEAL_SLOTS, benchedRecipesForSlot, effectiveWeeklyMenu, mondayFirstIndex } from '../utils/weeklyMenu'
 import { suggestWeeklyMenu } from '../utils/weeklyMenuSuggestion'
 
@@ -23,10 +24,13 @@ const applyingSuggestion = ref(false)
 
 const todayIndex = mondayFirstIndex()
 const plan = computed(() => effectiveWeeklyMenu(template.value, overrides.value))
+// El menú semanal solo se arma con recetas clasificadas como "Platillo" (ver RecipeFormView):
+// marinadas/adobos u otras recetas sin clasificar no aparecen como opción acá.
+const platilloRecipes = computed(() => recipes.value.filter(isPlatillo))
 const benchedBySlot = computed(() =>
   MEAL_SLOTS.map((slot) => ({
     slot,
-    recipes: benchedRecipesForSlot(recipes.value, template.value, slot.mealType, goal.value),
+    recipes: benchedRecipesForSlot(platilloRecipes.value, template.value, slot.mealType, goal.value),
   })),
 )
 
@@ -99,7 +103,7 @@ async function assignFromBench(recipe, slotKey, event) {
 }
 
 function handleSuggest() {
-  suggestion.value = suggestWeeklyMenu(recipes.value, { goal: goal.value })
+  suggestion.value = suggestWeeklyMenu(platilloRecipes.value, { goal: goal.value })
 }
 
 function suggestionNoteFor(dayIndex, slotKey) {
@@ -146,6 +150,10 @@ onMounted(load)
 
     <div v-if="error" class="alert alert-danger">{{ error }}</div>
     <div v-if="loading" class="text-muted">Cargando...</div>
+    <div v-else-if="platilloRecipes.length === 0" class="alert alert-warning">
+      No tenés ninguna receta clasificada como "Platillo" todavía. Marcá la clasificación en
+      <RouterLink :to="{ name: 'recetas-lista' }">Recetario</RouterLink> para que aparezcan acá.
+    </div>
 
     <template v-else>
       <div v-if="suggestion" class="suggestion-panel mb-3">
@@ -199,7 +207,7 @@ onMounted(load)
                 @change="handleTemplateChange(row.dayIndex, slot.key, $event)"
               >
                 <option value="">Sin asignar</option>
-                <option v-for="r in recipes" :key="r.id" :value="r.id">{{ r.name }}</option>
+                <option v-for="r in platilloRecipes" :key="r.id" :value="r.id">{{ r.name }}</option>
               </select>
             </div>
             <div class="control-group">
@@ -211,7 +219,7 @@ onMounted(load)
               >
                 <option value="__none__">— sin cambio —</option>
                 <option value="">Sin asignar</option>
-                <option v-for="r in recipes" :key="r.id" :value="r.id">{{ r.name }}</option>
+                <option v-for="r in platilloRecipes" :key="r.id" :value="r.id">{{ r.name }}</option>
               </select>
             </div>
           </div>

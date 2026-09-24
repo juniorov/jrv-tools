@@ -2,6 +2,22 @@ export const MEAL_TYPES = ['Desayuno', 'Almuerzo', 'Cena']
 
 export const FITNESS_GOALS = ['Aumento de masa muscular', 'Tonificar', 'Pérdida de grasa', 'Cualquiera']
 
+export const RECIPE_TYPES = ['Platillo', 'Marinada/Adobo']
+
+/** Valor válido de RECIPE_TYPES, o '' (sin clasificar) para cualquier otra cosa. */
+export function normalizeRecipeType(recipeType) {
+  return RECIPE_TYPES.includes(recipeType) ? recipeType : ''
+}
+
+/**
+ * A diferencia de mealTypes/goals, una receta sin `recipeType` NO se considera "Platillo" por
+ * comodín: el menú semanal debe armarse solo con platillos completos, así que las recetas sin
+ * clasificar (o marcadas como marinada/adobo) quedan afuera hasta que se etiqueten a mano.
+ */
+export function isPlatillo(recipe) {
+  return recipe.recipeType === 'Platillo'
+}
+
 /** Filtra `mealTypes` a los valores válidos de MEAL_TYPES; descarta lo demás. */
 export function normalizeMealTypes(mealTypes) {
   if (!Array.isArray(mealTypes)) return []

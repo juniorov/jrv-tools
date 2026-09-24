@@ -19,9 +19,18 @@ describe('parseRecipesFile', () => {
       tags: [],
       mealTypes: [],
       goals: [],
+      recipeType: '',
       yieldType: 'servings',
       yieldUnit: 'porciones',
     })
+  })
+
+  it('acepta recipeType válido y descarta valores inválidos', () => {
+    const [platillo] = parseRecipesFile(JSON.stringify({ recetas: [baseRecipe({ recipeType: 'Platillo' })] }))
+    expect(platillo.recipeType).toBe('Platillo')
+
+    const [invalido] = parseRecipesFile(JSON.stringify({ recetas: [baseRecipe({ recipeType: 'Postre' })] }))
+    expect(invalido.recipeType).toBe('')
   })
 
   it('acepta mealTypes y goals válidos', () => {

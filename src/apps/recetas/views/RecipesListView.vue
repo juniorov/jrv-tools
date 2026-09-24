@@ -114,6 +114,8 @@ onMounted(load)
       <li v-for="recipe in filteredRecipes" :key="recipe.id" class="list-group-item d-flex justify-content-between align-items-center">
         <RouterLink :to="{ name: 'recetas-detalle', params: { id: recipe.id } }" class="recipe-link">
           <span class="fw-semibold">{{ recipe.name }}</span>
+          <span v-if="recipe.recipeType" class="badge text-bg-dark ms-2">{{ recipe.recipeType }}</span>
+          <span v-else class="badge text-bg-light text-muted ms-2">Sin clasificar</span>
           <span class="text-muted ms-2">{{ yieldLabel(recipe) }} · {{ recipe.ingredients.length }} ingredientes</span>
         </RouterLink>
         <div class="d-flex gap-2">

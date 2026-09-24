@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import IngredientRows from '../components/IngredientRows.vue'
 import { createRecipe, getRecipe, updateRecipe } from '../services/recipes'
-import { FITNESS_GOALS, MEAL_TYPES } from '../utils/recipeTags'
+import { FITNESS_GOALS, MEAL_TYPES, RECIPE_TYPES } from '../utils/recipeTags'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,6 +20,7 @@ const stepsText = ref('')
 const tagsText = ref('')
 const mealTypes = ref([])
 const goals = ref([])
+const recipeType = ref('')
 const yieldType = ref('servings')
 const yieldValue = ref(null)
 const yieldUnit = ref('')
@@ -40,6 +41,7 @@ async function load() {
     tagsText.value = (recipe.tags || []).join(', ')
     mealTypes.value = recipe.mealTypes || []
     goals.value = recipe.goals || []
+    recipeType.value = recipe.recipeType || ''
     yieldType.value = recipe.yieldType
     yieldValue.value = recipe.yieldValue
     yieldUnit.value = recipe.yieldType === 'amount' ? recipe.yieldUnit : ''
@@ -76,6 +78,7 @@ async function save() {
       tags: tagsText.value.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean),
       mealTypes: mealTypes.value,
       goals: goals.value,
+      recipeType: recipeType.value,
       yieldType: yieldType.value,
       yieldValue: Number(yieldValue.value),
       yieldUnit: yieldType.value === 'amount' ? yieldUnit.value.trim() : 'porciones',
@@ -121,6 +124,15 @@ onMounted(load)
       <div class="mb-3">
         <label class="form-label">Etiquetas (separadas por coma)</label>
         <input v-model="tagsText" type="text" class="form-control" placeholder="panadería, sin lácteos" />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Clasificación</label>
+        <select v-model="recipeType" class="form-select">
+          <option value="">Sin clasificar</option>
+          <option v-for="rt in RECIPE_TYPES" :key="rt" :value="rt">{{ rt }}</option>
+        </select>
+        <div class="form-text">Solo las recetas marcadas como "Platillo" aparecen en el menú semanal.</div>
       </div>
 
       <div class="row g-3 mb-3">
