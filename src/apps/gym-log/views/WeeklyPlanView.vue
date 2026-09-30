@@ -122,9 +122,8 @@ async function applySuggestion() {
   }
 }
 
-async function handleStartToday() {
-  const todayRow = plan.value[todayIndex]
-  const routine = routines.value.find((r) => r.id === todayRow.routineId)
+async function handleStartRoutine(row) {
+  const routine = routines.value.find((r) => r.id === row.routineId)
   if (!routine) return
 
   starting.value = true
@@ -217,13 +216,13 @@ onMounted(load)
         </div>
 
         <button
-          v-if="row.dayIndex === todayIndex && row.routineId"
+          v-if="row.routineId"
           type="button"
           class="btn btn-primary btn-sm mt-2"
           :disabled="starting"
-          @click="handleStartToday"
+          @click="handleStartRoutine(row)"
         >
-          <i class="bi bi-play-fill me-1"></i>Iniciar entrenamiento
+          <i class="bi bi-play-fill me-1"></i>{{ row.dayIndex === todayIndex ? 'Iniciar entrenamiento' : 'Iniciar rutina' }}
         </button>
       </div>
 
