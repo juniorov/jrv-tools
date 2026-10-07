@@ -16,7 +16,12 @@ import { getGoalMovements, getGoals } from '@/apps/ahorros/services/objetivos'
 import MovementForm from '@/apps/ahorros/components/MovementForm.vue'
 import { formatMoney } from '@/apps/ahorros/utils/currency'
 import { extractDistinctPersonas } from '@/apps/ahorros/utils/persons'
-import { formatDate, parseDateInput, toDateInputValue } from '@/apps/ahorros/utils/dates'
+import {
+  formatDate,
+  groupMovementsByMonth,
+  parseDateInput,
+  toDateInputValue,
+} from '@/apps/ahorros/utils/dates'
 
 const route = useRoute()
 const accountId = route.params.id
@@ -40,6 +45,7 @@ const editGoalId = ref('')
 const editPersona = ref('')
 const editAllowOverdraft = ref(false)
 const editError = ref('')
+const activeMovementMonth = ref(null)
 
 function entityName(entityId) {
   return entities.value.find((e) => e.id === entityId)?.name ?? null
@@ -56,6 +62,11 @@ const transferAccounts = computed(() =>
   accounts.value
     .filter((a) => a.id !== accountId && a.currency === account.value?.currency)
     .map((a) => ({ ...a, label: accountLabel(a.id) })),
+)
+
+const movementGroups = computed(() => groupMovementsByMonth(movements.value))
+const activeMovementGroup = computed(
+  () => movementGroups.value.find((group) => group.key === activeMovementMonth.value) ?? movementGroups.value[0],
 )
 
 function isTransfer(movement) {
@@ -75,6 +86,10 @@ async function loadAll() {
   entities.value = entitiesResult
   entity.value = entitiesResult.find((e) => e.id === accountResult?.entityId) ?? null
   movements.value = movementsResult
+  activeMovementMonth.value =
+    movementGroups.value.find((group) => group.key === activeMovementMonth.value)?.key ??
+    movementGroups.value[0]?.key ??
+    null
   goals.value = goalsResult
   accounts.value = accountsResult
   loading.value = false
@@ -190,10 +205,32 @@ onMounted(loadAll)
       </div>
     </div>
 
-    <h2 class="h6 mb-2">Historial</h2>
+    <div class="d-flex justify-content-between align-items-end gap-3 mb-2">
+      <h2 class="h6 mb-0">Historial</h2>
+      <span v-if="movements.length" class="text-muted small">{{ movements.length }} movimientos</span>
+    </div>
     <div v-if="movements.length === 0" class="text-muted">Aún no hay movimientos.</div>
-    <ul v-else class="list-group">
-      <li v-for="movement in movements" :key="movement.id" class="list-group-item">
+    <template v-else>
+      <div class="movement-months mb-3" aria-label="Meses del historial">
+        <button
+          v-for="group in movementGroups"
+          :key="group.key"
+          type="button"
+          class="movement-month-button"
+          :class="{ active: activeMovementGroup?.key === group.key }"
+          :aria-pressed="activeMovementGroup?.key === group.key"
+          @click="activeMovementMonth = group.key"
+        >
+          <span>{{ group.label }}</span>
+          <span class="movement-month-count">{{ group.movements.length }}</span>
+        </button>
+      </div>
+      <div v-if="activeMovementGroup" class="movement-month-heading mb-2">
+        <h3 class="h6 mb-0">{{ activeMovementGroup.label }}</h3>
+        <span class="text-muted small">{{ activeMovementGroup.movements.length }} movimientos</span>
+      </div>
+      <ul class="list-group">
+      <li v-for="movement in activeMovementGroup.movements" :key="movement.id" class="list-group-item">
         <template v-if="editingId === movement.id">
           <form class="row g-2 align-items-end" @submit.prevent="saveEdit(movement)">
             <div v-if="!isTransfer(movement)" class="col-6 col-sm-3">
@@ -317,7 +354,8 @@ onMounted(loadAll)
           </div>
         </div>
       </li>
-    </ul>
+      </ul>
+    </template>
   </template>
   <div v-else class="alert alert-danger">No se encontró la cuenta.</div>
 </template>

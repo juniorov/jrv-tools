@@ -183,3 +183,55 @@
 .app-ahorros .text-muted {
   color: var(--color-text-muted) !important;
 }
+
+.app-ahorros .movement-months {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.app-ahorros .movement-month-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.app-ahorros .movement-month-button:hover,
+.app-ahorros .movement-month-button:focus-visible {
+  border-color: var(--color-secondary);
+  color: var(--color-primary);
+  outline: none;
+}
+
+.app-ahorros .movement-month-button.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.app-ahorros .movement-month-count {
+  min-width: 1.35rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-bg);
+  font-size: var(--font-size-xs);
+  text-align: center;
+}
+
+.app-ahorros .movement-month-button.active .movement-month-count {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.app-ahorros .movement-month-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}

@@ -17,7 +17,7 @@ import PersonaAutocomplete from '@/apps/ahorros/components/PersonaAutocomplete.v
 import ShareGoalPanel from '@/apps/ahorros/components/ShareGoalPanel.vue'
 import { CURRENCIES, formatMoney } from '@/apps/ahorros/utils/currency'
 import { computeGoalTotal, computePersonSubtotals, extractDistinctPersonas } from '@/apps/ahorros/utils/persons'
-import { formatDate } from '@/apps/ahorros/utils/dates'
+import { formatDate, groupMovementsByMonth } from '@/apps/ahorros/utils/dates'
 import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
@@ -50,9 +50,9 @@ const personTargetError = ref('')
 const newPersonName = ref('')
 const newPersonTarget = ref(null)
 const newPersonError = ref('')
+const activeMovementMonth = ref(null)
 
 const entityById = computed(() => Object.fromEntries(entities.value.map((e) => [e.id, e])))
-
 const isOwner = computed(() => goal.value?.ownerId === authStore.user?.uid)
 const canEdit = computed(
   () => isOwner.value || goal.value?.sharedWith?.[authStore.user?.uid] === 'editor',
@@ -85,6 +85,11 @@ const personEntries = computed(() => {
     .sort((a, b) => a.persona.localeCompare(b.persona))
 })
 
+const movementGroups = computed(() => groupMovementsByMonth(movements.value))
+const activeMovementGroup = computed(
+  () => movementGroups.value.find((group) => group.key === activeMovementMonth.value) ?? movementGroups.value[0],
+)
+
 async function loadAll() {
   loading.value = true
   const [goalResult, movementsResult, accountsResult, entitiesResult] = await Promise.all([
@@ -95,6 +100,10 @@ async function loadAll() {
   ])
   goal.value = goalResult
   movements.value = movementsResult
+  activeMovementMonth.value =
+    movementGroups.value.find((group) => group.key === activeMovementMonth.value)?.key ??
+    movementGroups.value[0]?.key ??
+    null
   accounts.value = accountsResult
   entities.value = entitiesResult
   loading.value = false
@@ -445,10 +454,32 @@ onMounted(loadAll)
 
     <ShareGoalPanel v-if="isOwner" :goal="goal" @changed="loadAll" />
 
-    <h2 class="h6 mb-2">Historial</h2>
+    <div class="d-flex justify-content-between align-items-end gap-3 mb-2">
+      <h2 class="h6 mb-0">Historial</h2>
+      <span v-if="movements.length" class="text-muted small">{{ movements.length }} movimientos</span>
+    </div>
     <div v-if="movements.length === 0" class="text-muted">Aún no hay movimientos.</div>
-    <ul v-else class="list-group">
-      <li v-for="movement in movements" :key="movement.id" class="list-group-item">
+    <template v-else>
+      <div class="movement-months mb-3" aria-label="Meses del historial">
+        <button
+          v-for="group in movementGroups"
+          :key="group.key"
+          type="button"
+          class="movement-month-button"
+          :class="{ active: activeMovementGroup?.key === group.key }"
+          :aria-pressed="activeMovementGroup?.key === group.key"
+          @click="activeMovementMonth = group.key"
+        >
+          <span>{{ group.label }}</span>
+          <span class="movement-month-count">{{ group.movements.length }}</span>
+        </button>
+      </div>
+      <div v-if="activeMovementGroup" class="movement-month-heading mb-2">
+        <h3 class="h6 mb-0">{{ activeMovementGroup.label }}</h3>
+        <span class="text-muted small">{{ activeMovementGroup.movements.length }} movimientos</span>
+      </div>
+      <ul class="list-group">
+      <li v-for="movement in activeMovementGroup.movements" :key="movement.id" class="list-group-item">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
           <div>
             <div>
@@ -515,7 +546,8 @@ onMounted(loadAll)
           </form>
         </div>
       </li>
-    </ul>
+      </ul>
+    </template>
   </template>
   <div v-else class="alert alert-danger">No se encontró el objetivo.</div>
 </template>

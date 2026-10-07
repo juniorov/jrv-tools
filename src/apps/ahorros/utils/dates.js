@@ -20,7 +20,11 @@ export function parseDateInput(value) {
 
 /** Convierte un Date/Timestamp de Firestore al string "YYYY-MM-DD" en hora LOCAL. */
 export function toDateInputValue(value) {
-  const d = value?.toDate ? value.toDate() : new Date(value)
+  const d = value?.toDate
+    ? value.toDate()
+    : typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+      ? parseDateInput(value)
+      : new Date(value)
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
@@ -28,4 +32,34 @@ export function toDateInputValue(value) {
 export function formatDate(value) {
   const d = value?.toDate ? value.toDate() : new Date(value)
   return d.toLocaleDateString('es-CR')
+}
+
+/** Devuelve la clave local YYYY-MM para agrupar fechas por mes. */
+export function monthKey(value) {
+  return toDateInputValue(value).slice(0, 7)
+}
+
+/** Devuelve un nombre de mes legible para los selectores del historial. */
+export function formatMonth(value) {
+  const [year, month] = monthKey(value).split('-').map(Number)
+  const label = new Date(year, month - 1, 1).toLocaleDateString('es-CR', {
+    month: 'long',
+    year: 'numeric',
+  })
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
+/** Agrupa movimientos por mes, conservando el orden recibido dentro de cada grupo. */
+export function groupMovementsByMonth(movements) {
+  const groups = new Map()
+
+  for (const movement of movements) {
+    const key = monthKey(movement.date)
+    if (!groups.has(key)) {
+      groups.set(key, { key, label: formatMonth(movement.date), movements: [] })
+    }
+    groups.get(key).movements.push(movement)
+  }
+
+  return [...groups.values()].sort((a, b) => b.key.localeCompare(a.key))
 }

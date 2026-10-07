@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { formatDate, parseDateInput, toDateInputValue } from './dates'
+import {
+  formatDate,
+  formatMonth,
+  groupMovementsByMonth,
+  monthKey,
+  parseDateInput,
+  toDateInputValue,
+} from './dates'
 
 describe('parseDateInput', () => {
   it('interpreta el string como fecha LOCAL, no UTC (evita el corrimiento de un día)', () => {
@@ -26,5 +33,24 @@ describe('formatDate', () => {
   it('formatea la misma fecha que se parseó, sin restar un día', () => {
     const d = parseDateInput('2026-08-14')
     expect(formatDate(d)).toBe('14/8/2026')
+  })
+})
+
+describe('groupMovementsByMonth', () => {
+  it('agrupa por mes y ordena los meses del más reciente al más antiguo', () => {
+    const groups = groupMovementsByMonth([
+      { id: 'old', date: '2026-01-10' },
+      { id: 'new', date: '2026-03-04' },
+      { id: 'same', date: '2026-03-01' },
+    ])
+
+    expect(groups.map(({ key }) => key)).toEqual(['2026-03', '2026-01'])
+    expect(groups[0].movements.map(({ id }) => id)).toEqual(['new', 'same'])
+    expect(groups[0].label).toMatch(/Marzo.*2026/i)
+  })
+
+  it('expone la clave YYYY-MM y un nombre legible', () => {
+    expect(monthKey('2026-08-14')).toBe('2026-08')
+    expect(formatMonth('2026-08-14')).toMatch(/Agosto.*2026/i)
   })
 })
