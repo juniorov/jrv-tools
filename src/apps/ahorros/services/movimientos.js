@@ -204,7 +204,7 @@ export async function materializeGoalMovement(goalId, goalMovementId, accountId,
     goalMovementId,
     createdAt: serverTimestamp(),
   })
-  batch.update(goalMovementRef, { accountId })
+  batch.update(goalMovementRef, { accountId, accountMovementId: accountMovementRef.id })
   await batch.commit()
 
   return accountMovementRef.id

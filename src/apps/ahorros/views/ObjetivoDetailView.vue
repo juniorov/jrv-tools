@@ -1,9 +1,10 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import {
   addGoalMovement,
   deleteGoal,
+  deleteGoalMovement,
   getGoal,
   getGoalMovements,
   setPersonTargets,
@@ -36,6 +37,8 @@ const materializingId = ref(null)
 const materializeAccountId = ref('')
 const materializeAllowOverdraft = ref(false)
 const materializeError = ref('')
+const deletingMovementId = ref(null)
+const movementDeleteError = ref('')
 
 const currencyOptions = Object.entries(CURRENCIES).map(([code, cfg]) => ({ code, ...cfg }))
 const editingGoal = ref(false)
@@ -53,6 +56,13 @@ const newPersonError = ref('')
 const activeMovementMonth = ref(null)
 
 const entityById = computed(() => Object.fromEntries(entities.value.map((e) => [e.id, e])))
+
+function accountLabel(accountId) {
+  const account = accounts.value.find((item) => item.id === accountId)
+  if (!account) return 'Cuenta'
+  const entityName = entityById.value[account.entityId]?.name
+  return entityName ? `${account.name} (${entityName})` : account.name
+}
 const isOwner = computed(() => goal.value?.ownerId === authStore.user?.uid)
 const canEdit = computed(
   () => isOwner.value || goal.value?.sharedWith?.[authStore.user?.uid] === 'editor',
@@ -240,6 +250,20 @@ async function confirmMaterialize(movement) {
     await loadAll()
   } catch (err) {
     materializeError.value = err.message
+  }
+}
+
+async function handleDeleteMovement(movement) {
+  if (!confirm('¿Eliminar este movimiento del objetivo?')) return
+  deletingMovementId.value = movement.id
+  movementDeleteError.value = ''
+  try {
+    await deleteGoalMovement(goalId, movement.id)
+    await loadAll()
+  } catch (err) {
+    movementDeleteError.value = err.message
+  } finally {
+    deletingMovementId.value = null
   }
 }
 
@@ -458,6 +482,7 @@ onMounted(loadAll)
       <h2 class="h6 mb-0">Historial</h2>
       <span v-if="movements.length" class="text-muted small">{{ movements.length }} movimientos</span>
     </div>
+    <div v-if="movementDeleteError" class="alert alert-danger py-2 mb-3">{{ movementDeleteError }}</div>
     <div v-if="movements.length === 0" class="text-muted">Aún no hay movimientos.</div>
     <template v-else>
       <div class="movement-months mb-3" aria-label="Meses del historial">
@@ -492,7 +517,15 @@ onMounted(loadAll)
               <span v-if="movement.persona" class="fw-semibold">{{ movement.persona }}</span>
               <span v-if="movement.description" class="text-muted"> — {{ movement.description }}</span>
             </div>
-            <div class="text-muted small">{{ formatDate(movement.date) }}</div>
+            <div class="text-muted small">
+              {{ formatDate(movement.date) }}
+              <span v-if="movement.accountId">
+                · Cuenta:
+                <RouterLink :to="`/ahorros/cuentas/${movement.accountId}`">
+                  {{ accountLabel(movement.accountId) }}
+                </RouterLink>
+              </span>
+            </div>
           </div>
           <div class="d-flex align-items-center gap-2">
             <div class="fw-semibold" :class="movement.type === 'ingreso' ? 'text-success' : 'text-danger'">
@@ -505,6 +538,15 @@ onMounted(loadAll)
               @click="startMaterialize(movement)"
             >
               <i class="bi bi-bank2"></i>
+            </button>
+            <button
+              v-if="canEdit"
+              class="btn btn-sm btn-outline-danger"
+              title="Eliminar movimiento"
+              :disabled="deletingMovementId === movement.id"
+              @click="handleDeleteMovement(movement)"
+            >
+              <i class="bi" :class="deletingMovementId === movement.id ? 'bi-hourglass-split' : 'bi-trash'"></i>
             </button>
           </div>
         </div>

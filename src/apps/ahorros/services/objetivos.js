@@ -17,6 +17,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuthStore } from '@/stores/auth'
+import { deleteAccountMovement } from '@/apps/ahorros/services/movimientos'
 import { resolveUidByEmail } from '@/apps/ahorros/services/userLookup'
 
 const goalsRef = collection(db, 'ahorros_goals')
@@ -98,6 +99,37 @@ export async function getGoalMovements(goalId) {
   const movementsRef = collection(db, 'ahorros_goals', goalId, 'movements')
   const snapshot = await getDocs(query(movementsRef, orderBy('date', 'desc')))
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))
+}
+
+/** Elimina un aporte del objetivo y, si fue materializado, también revierte la cuenta. */
+export async function deleteGoalMovement(goalId, movementId) {
+  const movementRef = doc(db, 'ahorros_goals', goalId, 'movements', movementId)
+  const movementSnap = await getDoc(movementRef)
+  if (!movementSnap.exists()) return
+
+  const movement = movementSnap.data()
+  if (movement.accountId) {
+    let accountMovementId = movement.accountMovementId
+    if (!accountMovementId) {
+      // Compatibilidad con aportes materializados antes de guardar accountMovementId.
+      const accountMovements = await getDocs(
+        collection(db, 'ahorros_accounts', movement.accountId, 'movements'),
+      )
+      accountMovementId = accountMovements.docs.find(
+        (d) => d.data().goalMovementId === movementId,
+      )?.id
+    }
+    if (!accountMovementId) {
+      // Compatibilidad con la implementación anterior: guardaba accountId en el objetivo,
+      // pero no creaba un movimiento real dentro de la cuenta.
+      await deleteDoc(movementRef)
+      return
+    }
+    await deleteAccountMovement(movement.accountId, accountMovementId)
+    return
+  }
+
+  await deleteDoc(movementRef)
 }
 
 /** Objetivos que otra persona compartió conmigo (ya aceptados, no privados del dueño). */
