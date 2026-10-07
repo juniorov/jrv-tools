@@ -117,9 +117,10 @@ async function loadPreviousValues(routineId) {
 }
 
 function formatSummarySet(set) {
-  const weightLabel = set.weight ? `${set.weight}kg` : ''
+  const weightLabel = set.weight != null ? `${set.weight}kg` : ''
   if (set.seconds != null) return weightLabel ? `${set.seconds}s · ${weightLabel}` : `${set.seconds}s`
-  return weightLabel ? `${set.reps} x ${weightLabel}` : `${set.reps} reps`
+  if (set.reps != null) return weightLabel ? `${set.reps} x ${weightLabel}` : `${set.reps} reps`
+  return weightLabel || '—'
 }
 
 function weightDisplay(step) {

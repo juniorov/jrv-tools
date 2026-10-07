@@ -1,5 +1,11 @@
 import { workoutVolume } from './progress'
 
+function numericTarget(value) {
+  if (value == null || String(value).trim() === '') return null
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
 /**
  * Agrupa ejercicios CONSECUTIVOS que comparten `supersetGroup` en un mismo bloque. Un bloque de
  * un solo ejercicio es el caso normal (sin superset); un bloque de 2+ es un superset.
@@ -27,6 +33,9 @@ function groupIntoBlocks(exercises) {
 }
 
 function blankStepFrom(exercise, setNumber, supersetLabel) {
+  const targetReps = numericTarget(exercise.targetReps)
+  const targetSeconds = numericTarget(exercise.targetSeconds)
+
   return {
     exerciseName: exercise.name,
     metric: exercise.metric,
@@ -36,9 +45,11 @@ function blankStepFrom(exercise, setNumber, supersetLabel) {
     restSeconds: exercise.restSeconds,
     supersetLabel,
     videoUrl: exercise.videoUrl || '',
-    reps: null,
+    // Las metas numéricas son también el valor inicial de la serie. Así, marcar
+    // una serie como completada sin editarla no guarda `null` y el volumen se calcula.
+    reps: exercise.metric === 'reps' ? targetReps : null,
     weight: null,
-    seconds: null,
+    seconds: exercise.metric === 'time' ? targetSeconds : null,
     done: false,
   }
 }
@@ -110,7 +121,9 @@ export function stepsToExercises(steps) {
       byName.set(step.exerciseName, { name: step.exerciseName, sets: [] })
       order.push(step.exerciseName)
     }
-    const set = step.metric === 'time' ? { seconds: step.seconds, weight: step.weight } : { reps: step.reps, weight: step.weight }
+    const reps = step.reps ?? numericTarget(step.targetReps)
+    const seconds = step.seconds ?? numericTarget(step.targetSeconds)
+    const set = step.metric === 'time' ? { seconds, weight: step.weight } : { reps, weight: step.weight }
     byName.get(step.exerciseName).sets.push(set)
   }
 

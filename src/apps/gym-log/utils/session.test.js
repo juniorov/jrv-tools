@@ -21,6 +21,12 @@ describe('buildStepsFromRoutine', () => {
     expect(steps).toHaveLength(3)
     expect(steps.map((s) => s.setNumber)).toEqual([1, 2, 3])
     expect(steps.every((s) => s.exerciseName === 'Press banca' && s.supersetLabel === null)).toBe(true)
+    expect(steps.every((s) => s.reps === 10)).toBe(true)
+  })
+
+  it('no fuerza metas no numéricas como repeticiones', () => {
+    const routine = { exercises: [exercise({ targetReps: '8-10' })] }
+    expect(buildStepsFromRoutine(routine)[0].reps).toBeNull()
   })
 
   it('intercala las rondas de un superset (A1, B1, A2, B2, ...)', () => {
@@ -73,6 +79,19 @@ describe('stepsToExercises', () => {
   it('usa "seconds" en vez de "reps" para ejercicios por tiempo', () => {
     const steps = [{ exerciseName: 'Plancha', metric: 'time', seconds: 40, weight: 0, done: true }]
     expect(stepsToExercises(steps)).toEqual([{ name: 'Plancha', sets: [{ seconds: 40, weight: 0 }] }])
+  })
+
+  it('recupera la meta numérica de una sesión antigua que guardó reps como null', () => {
+    const steps = [{
+      exerciseName: 'Press banca',
+      metric: 'reps',
+      targetReps: '10',
+      reps: null,
+      weight: 20,
+      done: true,
+    }]
+    expect(stepsToExercises(steps)).toEqual([{ name: 'Press banca', sets: [{ reps: 10, weight: 20 }] }])
+    expect(sessionSummary({ startedAt: 0, steps }, 1000).totalVolume).toBe(200)
   })
 })
 
