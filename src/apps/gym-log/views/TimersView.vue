@@ -58,9 +58,16 @@ const paused = ref(false)
 const capReached = ref(false)
 
 let timer = null
+let lastTickAt = null
 
 const isCountingUp = computed(
   () => phase.value === 'work' && (mode.value === 'forTime' || (mode.value === 'clock' && clockDirection.value === 'up')),
+)
+
+const showsElapsed = computed(
+  () =>
+    (phase.value === 'work' || phase.value === 'done') &&
+    (mode.value === 'forTime' || (mode.value === 'clock' && clockDirection.value === 'up')),
 )
 
 const showRounds = computed(() => mode.value === 'tabata' || mode.value === 'emom')
@@ -78,7 +85,7 @@ const phaseLabel = computed(() => {
   return workLabel.value
 })
 
-const displaySeconds = computed(() => (isCountingUp.value ? elapsed.value : remaining.value))
+const displaySeconds = computed(() => (showsElapsed.value ? elapsed.value : remaining.value))
 
 const phaseTotal = computed(() => {
   if (phase.value === 'prepare') return prepareSeconds.value
@@ -186,20 +193,36 @@ function advance() {
 
 function tick() {
   clearInterval(timer)
+  lastTickAt = Date.now()
   timer = setInterval(() => {
-    if (paused.value) return
-    if (isCountingUp.value) {
-      elapsed.value += 1
-      checkForTimeCap()
-    } else {
-      remaining.value -= 1
-      if (remaining.value <= 0) advance()
+    if (paused.value) {
+      // Do not count the time spent paused when the browser resumes the interval.
+      lastTickAt = Date.now()
+      return
     }
-  }, 1000)
+
+    const now = Date.now()
+    const elapsedSeconds = Math.floor((now - lastTickAt) / 1000)
+    if (elapsedSeconds < 1) return
+    lastTickAt += elapsedSeconds * 1000
+
+    // Catch up after background-tab throttling without depending on one callback per second.
+    for (let second = 0; second < elapsedSeconds && timer; second += 1) {
+      if (isCountingUp.value) {
+        elapsed.value += 1
+        checkForTimeCap()
+      } else {
+        remaining.value -= 1
+        if (remaining.value <= 0) advance()
+      }
+    }
+  }, 250)
 }
 
 function finish() {
   clearInterval(timer)
+  timer = null
+  lastTickAt = null
   phase.value = 'done'
   paused.value = false
   beep(660)
@@ -228,6 +251,8 @@ function togglePause() {
 
 function reset() {
   clearInterval(timer)
+  timer = null
+  lastTickAt = null
   phase.value = 'idle'
   currentRound.value = 0
   remaining.value = 0
@@ -267,7 +292,7 @@ onUnmounted(() => clearInterval(timer))
       <div class="remaining">{{ formatClock(displaySeconds) }}</div>
       <div class="round-label" v-if="showRounds && phase !== 'idle'">Ronda {{ currentRound }} / {{ totalRounds }}</div>
       <div class="cap-label" v-if="mode === 'forTime' && capReached">¡Se acabó el time cap!</div>
-      <div class="progress-track" v-if="!isCountingUp">
+      <div class="progress-track" v-if="!showsElapsed">
         <div class="progress-fill" :style="{ width: progressPct + '%' }"></div>
       </div>
     </div>
