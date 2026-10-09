@@ -8,7 +8,7 @@ import { getGoals } from '@/apps/ahorros/services/objetivos'
 import PersonaAutocomplete from '@/apps/ahorros/components/PersonaAutocomplete.vue'
 import { formatMoney } from '@/apps/ahorros/utils/currency'
 import { extractDistinctPersonas } from '@/apps/ahorros/utils/persons'
-import { todayInputValue } from '@/apps/ahorros/utils/dates'
+import { formatDate, todayInputValue } from '@/apps/ahorros/utils/dates'
 
 const loans = ref([])
 const accounts = ref([])
@@ -152,6 +152,7 @@ onMounted(loadAll)
               <span>Prestado: {{ formatMoney(loan.principalAmount, loan.currency) }}</span>
               <span class="fw-semibold text-danger">Faltan {{ formatMoney(faltante(loan), loan.currency) }}</span>
             </div>
+            <div class="text-muted small mt-1">Fecha: {{ formatDate(loan.date) }}</div>
           </RouterLink>
         </li>
       </ul>
@@ -168,6 +169,7 @@ onMounted(loadAll)
               <div class="text-muted small mt-1">
                 Prestado: {{ formatMoney(loan.principalAmount, loan.currency) }}
               </div>
+              <div class="text-muted small mt-1">Fecha: {{ formatDate(loan.date) }}</div>
             </RouterLink>
           </li>
         </ul>

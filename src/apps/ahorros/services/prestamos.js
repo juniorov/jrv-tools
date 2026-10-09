@@ -28,7 +28,9 @@ function currentUid() {
 export async function getLoans() {
   const uid = currentUid()
   const snapshot = await getDocs(query(loansRef, where('ownerId', '==', uid)))
-  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => a.persona.localeCompare(b.persona))
+  return snapshot.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')) || a.persona.localeCompare(b.persona))
 }
 
 export async function getLoan(loanId) {
