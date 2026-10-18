@@ -1,5 +1,7 @@
 <script setup>
-import { apps } from '@/shared/apps.registry'
+import { useAppsStore } from '@/shared/stores/apps'
+
+const appsStore = useAppsStore()
 </script>
 
 <template>
@@ -8,7 +10,7 @@ import { apps } from '@/shared/apps.registry'
       <i class="bi bi-grid-3x3-gap-fill me-1"></i>JRV Tools
     </h1>
     <div class="row g-2 g-sm-3">
-      <div v-for="app in apps" :key="app.slug" class="col-6 col-sm-6 col-lg-4">
+      <div v-for="app in appsStore.enabledApps" :key="app.slug" class="col-6 col-sm-6 col-lg-4">
         <RouterLink :to="app.routeBase" class="card text-decoration-none h-100 shadow-sm border-0">
           <div class="card-body d-flex flex-column flex-sm-row align-items-center text-center text-sm-start gap-2 gap-sm-3">
             <span class="home-tile-icon" :style="{ backgroundColor: app.color }">
@@ -22,6 +24,14 @@ import { apps } from '@/shared/apps.registry'
         </RouterLink>
       </div>
     </div>
+
+    <div v-if="appsStore.enabledApps.length === 0" class="alert alert-light border mt-3">
+      No hay mini apps visibles. Podés activar alguna desde la configuración.
+    </div>
+
+    <RouterLink to="/configuracion" class="btn btn-outline-secondary mt-3">
+      <i class="bi bi-sliders me-1"></i>Configurar mini apps
+    </RouterLink>
   </div>
 </template>
 

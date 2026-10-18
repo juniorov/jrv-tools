@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useAppsStore } from '@/shared/stores/apps'
 import cartWiseRoutes from '@/apps/cart-wise/routes'
 import globalExchangeRoutes from '@/apps/global-exchange/routes'
 import calcInvoicesRoutes from '@/apps/calc-invoices/routes'
@@ -30,6 +31,12 @@ const router = createRouter({
       component: () => import('@/shared/views/ProfileView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/configuracion',
+      name: 'app-settings',
+      component: () => import('@/shared/views/AppSettingsView.vue'),
+      meta: { public: true },
+    },
     cartWiseRoutes,
     globalExchangeRoutes,
     calcInvoicesRoutes,
@@ -43,6 +50,7 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const authStore = useAuthStore()
+  const appsStore = useAppsStore()
   if (!authStore.ready) {
     await new Promise((resolve) => {
       const unwatch = authStore.$subscribe(() => {
@@ -54,6 +62,9 @@ router.beforeEach(async (to) => {
     })
   }
 
+  if (to.meta.appSlug && !appsStore.isEnabled(to.meta.appSlug)) {
+    return { name: 'app-settings' }
+  }
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }
   }

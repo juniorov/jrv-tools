@@ -41,6 +41,9 @@ async function handleLogout() {
     </RouterLink>
 
     <div class="suite-topbar-account">
+      <RouterLink to="/configuracion" class="suite-topbar-btn" title="Configurar mini apps">
+        <i class="bi bi-sliders"></i>
+      </RouterLink>
       <RouterLink v-if="!authStore.isAuthenticated" to="/login" class="suite-topbar-btn">
         <i class="bi bi-person-circle"></i>
       </RouterLink>

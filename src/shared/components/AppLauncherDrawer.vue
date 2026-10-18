@@ -1,9 +1,10 @@
 <script setup>
 import { Offcanvas } from 'bootstrap'
 import { useRoute } from 'vue-router'
-import { apps } from '@/shared/apps.registry'
+import { useAppsStore } from '@/shared/stores/apps'
 
 const route = useRoute()
+const appsStore = useAppsStore()
 
 function close() {
   const el = document.getElementById('appLauncher')
@@ -44,7 +45,7 @@ function close() {
       <hr />
 
       <RouterLink
-        v-for="app in apps"
+        v-for="app in appsStore.enabledApps"
         :key="app.slug"
         :to="app.routeBase"
         class="app-tile"
@@ -57,6 +58,18 @@ function close() {
         <span class="app-tile-text">
           <strong>{{ app.name }}</strong>
           <small>{{ app.description }}</small>
+        </span>
+      </RouterLink>
+
+      <hr />
+
+      <RouterLink to="/configuracion" class="app-tile" @click="close">
+        <span class="app-tile-icon" style="background-color: #6b7280">
+          <i class="bi bi-sliders"></i>
+        </span>
+        <span class="app-tile-text">
+          <strong>Configurar mini apps</strong>
+          <small>Elegir qué herramientas mostrar</small>
         </span>
       </RouterLink>
     </div>

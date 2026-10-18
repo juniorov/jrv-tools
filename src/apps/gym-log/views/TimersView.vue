@@ -49,6 +49,18 @@ const clockMinutes = ref(5)
 
 const prepareSeconds = ref(10)
 
+const adjustableValues = {
+  tabataWork,
+  tabataRest,
+  tabataRounds,
+  amrapMinutes,
+  emomInterval,
+  emomRounds,
+  forTimeCapMinutes,
+  clockMinutes,
+  prepareSeconds,
+}
+
 // Estado del cronómetro
 const phase = ref('idle') // idle | prepare | work | rest | done
 const currentRound = ref(0)
@@ -108,7 +120,8 @@ function formatClock(totalSeconds) {
   return `${minutes}:${String(seconds).padStart(2, '0')}`
 }
 
-function adjust(target, delta, min = 0) {
+function adjust(targetName, delta, min = 0) {
+  const target = adjustableValues[targetName]
   target.value = Math.max(min, target.value + delta)
 }
 
@@ -302,25 +315,25 @@ onUnmounted(() => clearInterval(timer))
         <div class="config-row">
           <span class="config-label">Trabajo</span>
           <div class="stepper">
-            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust(tabataWork, -5, 5)">−5s</button>
+            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust('tabataWork', -5, 5)">−5s</button>
             <span class="step-value">{{ tabataWork }}s</span>
-            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust(tabataWork, 5)">+5s</button>
+            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust('tabataWork', 5)">+5s</button>
           </div>
         </div>
         <div class="config-row">
           <span class="config-label">Descanso</span>
           <div class="stepper">
-            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust(tabataRest, -5, 0)">−5s</button>
+            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust('tabataRest', -5, 0)">−5s</button>
             <span class="step-value">{{ tabataRest }}s</span>
-            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust(tabataRest, 5)">+5s</button>
+            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust('tabataRest', 5)">+5s</button>
           </div>
         </div>
         <div class="config-row">
           <span class="config-label">Rondas</span>
           <div class="stepper">
-            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust(tabataRounds, -1, 1)">−1</button>
+            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust('tabataRounds', -1, 1)">−1</button>
             <span class="step-value">{{ tabataRounds }}</span>
-            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust(tabataRounds, 1)">+1</button>
+            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust('tabataRounds', 1)">+1</button>
           </div>
         </div>
       </template>
@@ -329,9 +342,9 @@ onUnmounted(() => clearInterval(timer))
         <div class="config-row">
           <span class="config-label">Duración</span>
           <div class="stepper">
-            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust(amrapMinutes, -1, 1)">−1min</button>
+            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust('amrapMinutes', -1, 1)">−1min</button>
             <span class="step-value">{{ amrapMinutes }}min</span>
-            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust(amrapMinutes, 1)">+1min</button>
+            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust('amrapMinutes', 1)">+1min</button>
           </div>
         </div>
       </template>
@@ -340,17 +353,17 @@ onUnmounted(() => clearInterval(timer))
         <div class="config-row">
           <span class="config-label">Intervalo</span>
           <div class="stepper">
-            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust(emomInterval, -15, 15)">−15s</button>
+            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust('emomInterval', -15, 15)">−15s</button>
             <span class="step-value">{{ emomInterval }}s</span>
-            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust(emomInterval, 15)">+15s</button>
+            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust('emomInterval', 15)">+15s</button>
           </div>
         </div>
         <div class="config-row">
           <span class="config-label">Rondas</span>
           <div class="stepper">
-            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust(emomRounds, -1, 1)">−1</button>
+            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust('emomRounds', -1, 1)">−1</button>
             <span class="step-value">{{ emomRounds }}</span>
-            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust(emomRounds, 1)">+1</button>
+            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust('emomRounds', 1)">+1</button>
           </div>
         </div>
       </template>
@@ -359,9 +372,9 @@ onUnmounted(() => clearInterval(timer))
         <div class="config-row">
           <span class="config-label">Time cap</span>
           <div class="stepper">
-            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust(forTimeCapMinutes, -1, 0)">−1min</button>
+            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust('forTimeCapMinutes', -1, 0)">−1min</button>
             <span class="step-value">{{ forTimeCapMinutes === 0 ? 'Sin tope' : `${forTimeCapMinutes}min` }}</span>
-            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust(forTimeCapMinutes, 1)">+1min</button>
+            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust('forTimeCapMinutes', 1)">+1min</button>
           </div>
         </div>
       </template>
@@ -393,9 +406,9 @@ onUnmounted(() => clearInterval(timer))
         <div class="config-row" v-if="clockDirection === 'down'">
           <span class="config-label">Duración</span>
           <div class="stepper">
-            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust(clockMinutes, -1, 1)">−1min</button>
+            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust('clockMinutes', -1, 1)">−1min</button>
             <span class="step-value">{{ clockMinutes }}min</span>
-            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust(clockMinutes, 1)">+1min</button>
+            <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust('clockMinutes', 1)">+1min</button>
           </div>
         </div>
       </template>
@@ -403,9 +416,9 @@ onUnmounted(() => clearInterval(timer))
       <div class="config-row">
         <span class="config-label">Preparación</span>
         <div class="stepper">
-          <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust(prepareSeconds, -5, 0)">−5s</button>
+          <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust('prepareSeconds', -5, 0)">−5s</button>
           <span class="step-value">{{ prepareSeconds }}s</span>
-          <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust(prepareSeconds, 5)">+5s</button>
+          <button type="button" class="step-btn" :disabled="phase !== 'idle'" @click="adjust('prepareSeconds', 5)">+5s</button>
         </div>
       </div>
     </div>
